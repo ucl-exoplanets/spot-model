@@ -37,16 +37,15 @@ def spher_to_cart(lat, lon):
 
 class StarModel(BaseStarModel):
     def create_mask_feat(self, y, z, rfeat, x=None):
-        c = np.sqrt(2.)
         r0 = np.sqrt(y**2 + z**2)
         r_min = r0 - rfeat
         r_max = r0 + rfeat
 
         value = np.arctan2(z, y)
         theta0 = value if value >= 0 else 2. * np.pi + value
-        d_theta = c * rfeat / r0
-        theta_min = theta0-d_theta
-        theta_max = theta0+d_theta
+        d_theta = np.sqrt(2.) * rfeat / r0
+        theta_min = theta0 - d_theta
+        theta_max = theta0 + d_theta
 
         indr = np.where((self.radii >= r_min) & (self.radii <= r_max))[0]
         if r0 <= rfeat:
@@ -56,20 +55,21 @@ class StarModel(BaseStarModel):
                 indth = np.where((self.theta >= theta_min)
                                  & (self.theta <= theta_max))[0]
             else:
-                theta_min += 2.*np.pi
+                theta_min += 2. * np.pi
                 indth = np.append(np.where(self.theta <= theta_max)[0],
                                   np.where(self.theta >= theta_min)[0])
-        dd = np.sqrt(((self.X[np.ix_(indth, indr)]-x)**2. if x else 0)+
-                     (self.Y[np.ix_(indth, indr)]-y)**2. +
-                     (self.Z[np.ix_(indth, indr)]-z)**2.)
-        dth = 2.*np.arcsin(dd/2.)
-        dth[dth > np.pi/2.] = 0
-        dd *= np.cos(dth/2.)
+        dd = np.sqrt(((self.X[np.ix_(indth, indr)] - x)**2. if x else 0)+
+                     (self.Y[np.ix_(indth, indr)] - y)**2. +
+                     (self.Z[np.ix_(indth, indr)] - z)**2.)
+        dth = 2. * np.arcsin(dd / 2.)
+        dth[dth > np.pi / 2.] = 0
+        dd *= np.cos(dth / 2.)
         return dd <= rfeat, indr, indth
 
     def create_mask_spot(self, lat, lon, rspot):
         x, y, z = spher_to_cart(lat, lon)
         mask, indr, indth = self.create_mask_feat(y, z, rspot, x=x)
+        mask = mask.astype(int)
         if self.spot_value != 1:
             mask[mask] = self.spot_value
         return mask, indr, indth
@@ -90,10 +90,10 @@ class StarModel(BaseStarModel):
             rspot = [rspot]
         for i in range(len(lat)):
             lat1 = (np.pi / 2. - lat[i] * np.pi / 180.)
-            lon1 = lon[i] * np.pi/180.
+            lon1 = lon[i] * np.pi / 180.
             mask1, indr, indtheta = self.create_mask_spot(lat1, lon1, rspot[i])
             mask[np.ix_(indtheta, indr)] += mask1.astype(bool)
-        return mask, mask.sum(0) * self.deltath / (2.*np.pi)
+        return mask, mask.sum(0) * self.deltath / (2. * np.pi)
 
     def lc_mask_with_planet(self, mask, y0p, z0p, rplanet):
         mask = mask.astype(int)
