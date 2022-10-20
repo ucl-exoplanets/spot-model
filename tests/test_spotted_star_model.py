@@ -10,7 +10,6 @@ from models.spotted_star import StarModel, OriginalStarModel
 class TestStarMdodel(unittest.TestCase):
     logging.basicConfig(level=logging.INFO)
 
-                     
     def setUp(self):
         ...
 
@@ -27,30 +26,42 @@ class TestStarMdodel(unittest.TestCase):
     def test_spot_mask(self, nr=1000, nth=1000):
         smodel = StarModel(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
-        lat, lon, rspot = np.array([0]), np.array([0]), np.array([0.2]) 
 
+        # single spots
         for lat in np.array([0, np.pi/2]):
             for lon in [0, np.pi/2]:
                 for rspot in [0., 0.1, 0.5]:
                     mask, ff = smodel.lc_mask(lat, lon, rspot)
                     mask0, ff0 = ref_smodel.lc_mask(lat, lon, rspot)
-                    self.assertTrue(np.isclose(1+ff, 1+ff0).all())
-                    self.assertTrue(np.isclose(1+mask, 1+mask0).all())
+                    self.assertTrue(np.isclose(ff, ff0).all())
+                    self.assertTrue(np.isclose(mask, mask0).all())
                     
         # Speed test
-        t0 = timeit.timeit(lambda:  ref_smodel.lc_mask(0,0,0.1), number=100)
-        t1 = timeit.timeit(lambda:  smodel.lc_mask(0,0,0.1), number=100)
+        t0 = timeit.timeit(lambda:  ref_smodel.lc_mask(0, 0, 0.1), number=50)
+        t1 = timeit.timeit(lambda:  smodel.lc_mask(0, 0, 0.1), number=50)
+        logging.info(f"\n Palermo's execution time: {t0} ")
+        logging.info(f"\n This code's execution time: {t1} ")
+        
+        # Multiple spots
+        lat, lon, rspot = np.array(
+            [0, np.pi/4]), np.array([0, np.pi/4]), np.array([0.2, 0.1])
+        mask, _ = smodel.lc_mask(lat, lon, rspot)
+        mask0, _ = ref_smodel.lc_mask(lat, lon, rspot)
+        self.assertTrue(np.isclose(1+mask, 1+mask0).all())
+
+        # Speed tests
+        t0 = timeit.timeit(lambda:  ref_smodel.lc_mask(lat, lon, rspot), number=50)
+        t1 = timeit.timeit(lambda:  smodel.lc_mask(lat, lon, rspot), number=50)
         logging.info(f"\n Palermo's execution time: {t0} ")
         logging.info(f"\n This code's execution time: {t1} ")
         #self.assertLess(t1, t0)
+
 
     def test_planet_mask(self):
         ...
 
     def test_mask(self):
         ...
-
-        
 
 
 if __name__ == '__main__':
