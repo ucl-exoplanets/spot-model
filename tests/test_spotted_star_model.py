@@ -7,7 +7,7 @@ import numpy as np
 from models.spotted_star import StarModel, OriginalStarModel
 
 
-class TestStarMdodel(unittest.TestCase):
+class TestStarModel(unittest.TestCase):
     logging.basicConfig(level=logging.INFO)
 
     def setUp(self):
