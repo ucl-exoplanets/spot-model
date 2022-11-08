@@ -33,9 +33,9 @@ class BaseStarModel(object):
         
 
 def spher_to_cart(lat, lon):
-    x = np.sin(lat) * np.cos(lon)
-    y = np.sin(lat) * np.sin(lon)
-    z = np.cos(lat)
+    x = np.cos(lat) * np.cos(lon)
+    y = np.cos(lat) * np.sin(lon)
+    z = np.sin(lat)
     return x, y, z
 
 
@@ -93,9 +93,7 @@ class StarModel(BaseStarModel):
         if isinstance(rspot, (int, float)):
             rspot = [rspot]
         for i in range(len(lat)):
-            lat1 = (np.pi / 2. - lat[i] * np.pi / 180.)
-            lon1 = lon[i] * np.pi / 180.
-            mask1, indr, indtheta = self.create_mask_spot(lat1, lon1, rspot[i])
+            mask1, indr, indtheta = self.create_mask_spot(lat[i], lon[i], rspot[i])
             mask[np.ix_(indtheta, indr)] += mask1.astype(bool)
         return mask, mask.sum(0) * self.deltath / (2. * np.pi)
 
@@ -117,6 +115,7 @@ class StarModel(BaseStarModel):
         ff_planet = np.sum(fraction_planet * 2. * np.pi *
                            self.radii*self.deltar) / np.pi
         return fraction_spot, fraction_planet, ff_spot, ff_planet
+
 
 
 class OriginalStarModel(BaseStarModel):
