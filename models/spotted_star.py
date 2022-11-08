@@ -27,10 +27,10 @@ class BaseStarModel(object):
         self.Th = np.arccos(self.Z)
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
-        
+
     def show(self):
         raise NotImplementedError
-        
+
 
 def spher_to_cart(lat, lon):
     x = np.cos(lat) * np.cos(lon)
@@ -41,48 +41,29 @@ def spher_to_cart(lat, lon):
 
 class StarModel(BaseStarModel):
     def create_mask_feat(self, y, z, rfeat, x=None):
-        r0 = np.sqrt(y**2 + z**2)
-        r_min = r0 - rfeat
-        r_max = r0 + rfeat
-
         theta0 = np.arctan2(z, y)
         theta0 = theta0 % (2. * np.pi)
-        d_theta = np.sqrt(2.) * rfeat / r0
-        theta_min = theta0 - d_theta
-        theta_max = theta0 + d_theta
-
-        indr = np.where((self.radii >= r_min) & (self.radii <= r_max))[0]
-        if r0 <= rfeat:
-            indth = np.arange(self.nth, dtype=int)
-        else:
-            if theta_min >= 0.:
-                indth = np.where((self.theta >= theta_min)
-                                 & (self.theta <= theta_max))[0]
-            else:
-                theta_min += 2. * np.pi
-                indth = np.append(np.where(self.theta <= theta_max)[0],
-                                  np.where(self.theta >= theta_min)[0])
-        dd = np.sqrt(((self.X[np.ix_(indth, indr)] - x)**2. if x else 0)+
-                     (self.Y[np.ix_(indth, indr)] - y)**2. +
-                     (self.Z[np.ix_(indth, indr)] - z)**2.)
+        dd = np.sqrt(((self.X - x)**2. if x else 0) +
+                     (self.Y - y)**2. +
+                     (self.Z - z)**2.)
         dth = 2. * np.arcsin(dd / 2.)
         dth[dth > np.pi / 2.] = 0
         dd *= np.cos(dth / 2.)
-        return dd <= rfeat, indr, indth
+        return dd <= rfeat
 
     def create_mask_spot(self, lat, lon, rspot):
         x, y, z = spher_to_cart(lat, lon)
-        mask, indr, indth = self.create_mask_feat(y, z, rspot, x=x)
+        mask = self.create_mask_feat(y, z, rspot, x=x)
         mask = mask.astype(int)
         if self.spot_value != 1:
             mask[mask] = self.spot_value
-        return mask, indr, indth
+        return mask
 
     def create_mask_planet(self, y, z, rplanet):
-        mask, indr, indth = self.create_mask_feat(y, z, rplanet)
+        mask = self.create_mask_feat(y, z, rplanet)
         mask = mask.astype(int)
         mask[mask] = self.planet_value
-        return mask, indr, indth
+        return mask
 
     def lc_mask(self, lat, lon, rspot):
         mask = np.zeros([self.nth, self.nr], bool)
@@ -93,14 +74,15 @@ class StarModel(BaseStarModel):
         if isinstance(rspot, (int, float)):
             rspot = [rspot]
         for i in range(len(lat)):
-            mask1, indr, indtheta = self.create_mask_spot(lat[i], lon[i], rspot[i])
-            mask[np.ix_(indtheta, indr)] += mask1.astype(bool)
+            mask1 = self.create_mask_spot(
+                lat[i], lon[i], rspot[i])
+            mask += mask1.astype(bool)
         return mask, mask.sum(0) * self.deltath / (2. * np.pi)
 
     def lc_mask_with_planet(self, mask, y0p, z0p, rplanet):
         mask = mask.astype(int)
-        mask_p, indr_p, indtheta_p = self.create_mask_planet(y0p, z0p, rplanet)
-        mask[np.ix_(indtheta_p, indr_p)] = mask_p
+        mask_p = self.create_mask_planet(y0p, z0p, rplanet)
+        mask = mask_p
         index_r = np.where(mask == 1)[1]
         unique, counts = np.unique(index_r, return_counts=True)
         fraction_spot = np.zeros(len(self.radii))
@@ -117,10 +99,9 @@ class StarModel(BaseStarModel):
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
 
-
 class OriginalStarModel(BaseStarModel):
     """original Palermo's code wrapped into a class"""
-    
+
     def spot_lc(self, lat, lon, rfeature):
         x0 = np.sin(lat) * np.cos(lon)
         y0 = np.sin(lat) * np.sin(lon)
