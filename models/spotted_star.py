@@ -1,5 +1,6 @@
 
 import numpy as np
+import matplotlib.pylab as plt
 
 
 class BaseStarModel(object):
@@ -20,13 +21,16 @@ class BaseStarModel(object):
         theta_edges = np.linspace(0., 2. * np.pi, nth+1)
         self.theta = (theta_edges[1:] + theta_edges[:-1]) / 2.
 
-        RR, TT = np.meshgrid(self.radii, self.theta, copy=False)
-        self.Z = RR*np.sin(TT)
-        self.Y = RR*np.cos(TT)
+        self.RR, self.TT = np.meshgrid(self.radii, self.theta, copy=False)
+        self.Z = self.RR * np.sin(self.TT)
+        self.Y = self.RR * np.cos(self.TT)
         self.Th = np.arccos(self.Z)
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
-
+        
+    def show(self):
+        raise NotImplementedError
+        
 
 def spher_to_cart(lat, lon):
     x = np.sin(lat) * np.cos(lon)
@@ -41,8 +45,8 @@ class StarModel(BaseStarModel):
         r_min = r0 - rfeat
         r_max = r0 + rfeat
 
-        value = np.arctan2(z, y)
-        theta0 = value if value >= 0 else 2. * np.pi + value
+        theta0 = np.arctan2(z, y)
+        theta0 = theta0 % (2. * np.pi)
         d_theta = np.sqrt(2.) * rfeat / r0
         theta_min = theta0 - d_theta
         theta_max = theta0 + d_theta
