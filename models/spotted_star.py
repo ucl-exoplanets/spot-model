@@ -1,4 +1,6 @@
 
+import collections.abc
+
 import numpy as np
 import matplotlib.pylab as plt
 
@@ -9,9 +11,10 @@ class BaseStarModel(object):
     spot_value = 1
     planet_value = 2
 
-    def __init__(self, nr: int = 100,  nth: int = 100):
+    def __init__(self, nr: int = 100,  nth: int = 100, T: int = 1):
         self.nr = nr
         self.nth = nth
+        self.T = T
         self.radii = (0.5 + np.arange(self.nr)) / self.nr
         self.mu = np.sqrt(1. - self.radii**2)
 
@@ -41,9 +44,14 @@ def spher_to_cart(lat, lon):
 
 class StarModel(BaseStarModel):
     def create_mask_feat(self, y, z, rfeat, x=None):
+        if (hasattr(y, '__len__') or hasattr(z, '__len__') or hasattr(x, '__len__')) and self.X.ndim == 2:
+            self.X = self.X[:,:,np.newaxis]
+            self.Y = self.Y[:,:,np.newaxis]
+            self.Z = self.Z[:,:,np.newaxis]
+
         theta0 = np.arctan2(z, y)
         theta0 = theta0 % (2. * np.pi)
-        dd = np.sqrt(((self.X - x)**2. if x else 0) +
+        dd = np.sqrt(((self.X - x)**2. if x is not None else 0) +
                      (self.Y - y)**2. +
                      (self.Z - z)**2.)
         dth = 2. * np.arcsin(dd / 2.)
@@ -67,16 +75,10 @@ class StarModel(BaseStarModel):
 
     def lc_mask(self, lat, lon, rspot):
         mask = np.zeros([self.nth, self.nr], bool)
-        if isinstance(lat, (int, float)):
-            lat = [lat]
-        if isinstance(lon, (int, float)):
-            lon = [lon]
-        if isinstance(rspot, (int, float)):
-            rspot = [rspot]
-        for i in range(len(lat)):
-            mask1 = self.create_mask_spot(
-                lat[i], lon[i], rspot[i])
-            mask += mask1.astype(bool)
+        mask1 = self.create_mask_spot(lat, lon, rspot)
+        if mask1.ndim == 3:
+            mask1 = mask1.sum(-1)    #### Additive mask in space ...
+        mask += mask1.astype(bool)
         return mask, mask.sum(0) * self.deltath / (2. * np.pi)
 
     def lc_mask_with_planet(self, mask, y0p, z0p, rplanet):
