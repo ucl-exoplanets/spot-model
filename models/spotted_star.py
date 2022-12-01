@@ -1,3 +1,4 @@
+import warnings 
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -99,7 +100,22 @@ class StarModel(BaseStarModel):
         return mask, mask.sum(0) * self.deltath / (2. * np.pi)
 
     def lc_mask_with_planet(self, mask, y0p, z0p, rplanet):
+        if isinstance(rplanet, (int, float)):
+            warnings.warn('rplanet expected as array entered as scalar')
+            rplanet = np.array([rplanet])
+        nr = len(rplanet)
+        
+        # planet mask 
         mask_p, indr_p, indtheta_p = self.create_mask_planet(y0p, z0p, rplanet)
+     
+        # planet integration
+        fraction_planet = np.zeros((len(self.radii), nr))
+        fraction_planet[indr_p] = ((mask_p/2).sum(0)*self.deltath)/(2*np.pi)
+        ff_planet = np.sum(fraction_planet * 2. * np.pi *
+                           self.radii[:,None]*self.deltar, axis=0) / np.pi
+        
+        # rmax = np.max(rplanet)
+        
         mask[np.ix_(indtheta_p, indr_p)] = mask_p
         index_r = np.where(mask == 1)[1]
         unique, counts = np.unique(index_r, return_counts=True)
@@ -108,12 +124,6 @@ class StarModel(BaseStarModel):
         ff_spot = np.sum(fraction_spot * 2. * np.pi *
                          self.radii * self.deltar) / np.pi
 
-        index_r = np.where(mask == self.planet_value)[1]
-        unique, counts = np.unique(index_r, return_counts=True)
-        fraction_planet = np.zeros(len(self.radii))
-        fraction_planet[unique] = counts * self.deltath / (2. * np.pi)
-        ff_planet = np.sum(fraction_planet * 2. * np.pi *
-                           self.radii*self.deltar) / np.pi
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
 
