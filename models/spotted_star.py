@@ -82,6 +82,7 @@ class StarModel(BaseStarModel):
         mask, indr, indth = self.create_mask_feat(y, z, rplanet)
         mask = mask.astype(int)
         mask[mask] = self.planet_value
+        mask = mask.astype(int)
         return mask, indr, indth
 
     def lc_mask(self, lat, lon, rspot):
@@ -98,7 +99,6 @@ class StarModel(BaseStarModel):
         return mask, mask.sum(0) * self.deltath / (2. * np.pi)
 
     def lc_mask_with_planet(self, mask, y0p, z0p, rplanet):
-        mask = mask.astype(int)
         mask_p, indr_p, indtheta_p = self.create_mask_planet(y0p, z0p, rplanet)
         mask[np.ix_(indtheta_p, indr_p)] = mask_p
         index_r = np.where(mask == 1)[1]
