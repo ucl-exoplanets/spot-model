@@ -65,11 +65,52 @@ class TestStarModel(unittest.TestCase):
         logging.info(f"\n This code's execution time (2 spots): {t1} ")
         #self.assertLess(t1, t0)
 
-    def test_planet_mask(self):
-        ...
 
-    def test_mask(self):
-        ...
+
+    def test_full_mask(self, nr=1000, nth=1000):
+        smodel = StarModel(nr=nr, nth=nth)
+        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+        
+        lat = np.pi/4
+        lon = np.pi/4
+        rspot = 0.1
+        mask, _ = smodel.lc_mask(lat, lon, rspot)
+        
+        lat = lat * 180 / np.pi
+        lon = lon * 180 / np.pi
+        ref_mask,_ = ref_smodel.lc_mask(lat, lon, rspot)
+        self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
+
+    def test_planet_mask(self, nr=1000, nth=1000):
+        smodel = StarModel(nr=nr, nth=nth)
+        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+        
+        rplanet = 0.1  #np.array([0.2, 0.1])
+        y = -0.5
+        z = -0.5
+        mask, _, _ = smodel.create_mask_planet(y, z, rplanet)
+        ref_mask, _, _ = ref_smodel.planet_lc(y, z, rplanet)
+        self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
+
+    def test_integration(self, nr=1000, nth=1000):
+        smodel = StarModel(nr=nr, nth=nth)
+        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+        
+        lat = np.pi/4
+        lon = np.pi/4
+        rspot = 0.1
+        mask, _ = smodel.lc_mask(lat, lon, rspot)
+        
+        # planet radii
+        rplanet = 0.1  #np.array([0.2, 0.1])
+        y0p = 0.5
+        z0p = 0.5
+        result = smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet)
+        ref_result = ref_smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet)
+        self.assertEqual(result[-2], ref_result[-2])
+        self.assertEqual(result[-1], ref_result[-1])
+        
+        
 
 
 if __name__ == '__main__':
