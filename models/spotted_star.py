@@ -1,4 +1,4 @@
-import warnings 
+import warnings
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -28,10 +28,10 @@ class BaseStarModel(object):
         self.Th = np.arccos(self.Z)
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
-        
+
     def show(self):
         raise NotImplementedError
-        
+
 
 def spher_to_cart(lat, lon):
     x = np.cos(lat) * np.cos(lon)
@@ -51,7 +51,7 @@ class StarModel(BaseStarModel):
             multir = True
             rfeat = np.array(rfeat)
             rfeatmax = np.max(rfeat)
-                        
+
         r_min = r0 - rfeatmax
         r_max = r0 + rfeatmax
 
@@ -72,14 +72,14 @@ class StarModel(BaseStarModel):
                 theta_min += 2. * np.pi
                 indth = np.append(np.where(self.theta <= theta_max)[0],
                                   np.where(self.theta >= theta_min)[0])
-        dd = np.sqrt(((self.X[np.ix_(indth, indr)] - x)**2. if x else 0)+
+        dd = np.sqrt(((self.X[np.ix_(indth, indr)] - x)**2. if x else 0) +
                      (self.Y[np.ix_(indth, indr)] - y)**2. +
                      (self.Z[np.ix_(indth, indr)] - z)**2.)
         dth = 2. * np.arcsin(dd / 2.)
         dth[dth > np.pi / 2.] = 0
         dd *= np.cos(dth / 2.)
         if multir:
-            return dd[:,:,None] <= rfeat, indr, indth
+            return dd[:, :, None] <= rfeat, indr, indth
         else:
             return dd <= rfeat, indr, indth
 
@@ -106,7 +106,8 @@ class StarModel(BaseStarModel):
         if isinstance(rspot, (int, float)):
             rspot = [rspot]
         for i in range(len(lat)):
-            mask1, indr, indtheta = self.create_mask_spot(lat[i], lon[i], rspot[i])
+            mask1, indr, indtheta = self.create_mask_spot(
+                lat[i], lon[i], rspot[i])
             mask[np.ix_(indtheta, indr)] += mask1.astype(bool)
         return mask.astype(int), mask.sum(0) * self.deltath / (2. * np.pi)
 
@@ -115,34 +116,31 @@ class StarModel(BaseStarModel):
             warnings.warn('rplanet expected as array entered as scalar')
             rplanet = np.array([rplanet])
         nr = len(rplanet)
-        
+
         # planet mask for various radii, and indices of the polar rectangle surrounding the largest radii
         mask_p, indr_p, indtheta_p = self.create_mask_planet(y0p, z0p, rplanet)
-     
+
+        mask = mask[:, :, None].repeat(nr, axis=2)
+        mask[np.ix_(indtheta_p, indr_p)] = mask_p
+
         # planet integration
         fraction_planet = np.zeros((len(self.radii), nr))
         fraction_planet[indr_p] = ((mask_p/2).sum(0)*self.deltath)/(2.*np.pi)
         ff_planet = np.sum(fraction_planet * 2. * np.pi *
                            self.radii[:,None]*self.deltar, axis=0) / np.pi
-        
-        # rmax = np.max(rplanet)
-        
-        mask = mask[:,:,None].repeat(nr, axis=2)        
-        mask[np.ix_(indtheta_p, indr_p)] = mask_p
-        index_r = np.where(mask == 1)[1]
-        unique, counts = np.unique(index_r, return_counts=True)
+
+        # spot integration
         fraction_spot = np.zeros(len(self.radii))
-        fraction_spot[unique] = counts * self.deltath / (2. * np.pi)
+        fraction_spot = ((mask == self.spot_value).sum(0)*self.deltath)/(2.*np.pi)
         ff_spot = np.sum(fraction_spot * 2. * np.pi *
-                         self.radii * self.deltar) / np.pi
+                         self.radii[:, None] * self.deltar) / np.pi
 
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
 
-
 class OriginalStarModel(BaseStarModel):
     """original Palermo's code wrapped into a class"""
-    
+
     def spot_lc(self, lat, lon, rfeature):
         x0 = np.sin(lat) * np.cos(lon)
         y0 = np.sin(lat) * np.sin(lon)
