@@ -110,7 +110,13 @@ class TestStarModel(unittest.TestCase):
         self.assertEqual(result[-2], ref_result[-2])
         self.assertEqual(result[-1], ref_result[-1])
         
-        
+        # Speed tests
+        t0 = timeit.timeit(lambda: ref_smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet), number=50)
+        t1 = timeit.timeit(lambda: smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet), number=50)
+        t2 = timeit.timeit(lambda: smodel.lc_mask_with_planet(mask, y0p, z0p, [rplanet]*10), number=50)
+        logging.info(f"\n Palermo's execution time (1 planet rad): {t0} ")
+        logging.info(f"\n This code's execution time (1 planet rad): {t1} ")
+        logging.info(f"\n This code's execution time (10 planet rad): {t2} ")
 
 
 if __name__ == '__main__':
