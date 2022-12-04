@@ -96,19 +96,22 @@ class TestStarModel(unittest.TestCase):
         smodel = StarModel(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
         
-        lat = np.pi/4
-        lon = np.pi/4
-        rspot = 0.1
+        lat = 0
+        lon = 0
+        rspot = 0.2
         mask, _ = smodel.lc_mask(lat, lon, rspot)
         
         # planet radii
-        rplanet = 0.1  #np.array([0.2, 0.1])
-        y0p = 0.5
-        z0p = 0.5
+        rplanet = 0.05  #np.array([0.2, 0.1])
+        y0p = 0.
+        z0p = 0.
         result = smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet)
         ref_result = ref_smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet)
         self.assertEqual(result[-2], ref_result[-2])
         self.assertEqual(result[-1], ref_result[-1])
+        self.assertTrue(np.isclose(result[0].flatten(), ref_result[0]).all())
+        self.assertTrue(np.isclose(result[1].flatten(), ref_result[1]).all())
+        
         
         # Speed tests
         t0 = timeit.timeit(lambda: ref_smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet), number=50)

@@ -115,33 +115,34 @@ class StarModel(BaseStarModel):
         if isinstance(rplanet, (int, float)):
             warnings.warn('rplanet expected as array entered as scalar')
             rplanet = np.array([rplanet])
-        nr = len(rplanet)
+        nw = len(rplanet)
 
-        # planet mask for various radii, and indices of the polar rectangle surrounding the largest radii
+        # planet mask for various radii, and indices of the polar rectangle surrounding the largest radius
         mask_p, indr_p, indtheta_p = self.create_mask_planet(y0p, z0p, rplanet)
 
-        # planet integration
-        fraction_planet = np.zeros((len(self.radii), nr))
+        #### planet integration
+        fraction_planet = np.zeros((len(self.radii), nw))
         fraction_planet[indr_p] = ((mask_p/2).sum(0)*self.deltath)/(2.*np.pi)
         ff_planet = np.sum(fraction_planet * 2. * np.pi *
                            self.radii[:, None]*self.deltar, axis=0) / np.pi
 
-        # spot integration
+        #### spot integration
 
+        # Full-size spotted mask with (largest) planet disk removed
         mask_nop = mask.copy()
-        mask_nop[np.ix_(indtheta_p, indr_p)] = 0
-        # Assumes spot_value == 1 !!
-        fraction_spot = (mask_nop.sum(0) * self.deltath)/(2.*np.pi)
-
-        mask_rmax = mask[np.ix_(indtheta_p, indr_p)][:,
-                                                     :, None].repeat(nr, axis=2)
-        mask_rmax *= ~(mask_p.astype(bool))
-        fraction_spot = fraction_spot[:, None].repeat(nr, axis=1)
-        fraction_spot[indr_p] = ((mask_rmax).sum(0)*self.deltath)/(2.*np.pi)
-
+        mask_nop[np.ix_(indtheta_p, indr_p)] = 0 # Assumes spot_value == 1 !!
+        # integration along theta
+        fraction_spot = (mask_nop.sum(0) * self.deltath)/(2.*np.pi)  # (nr) 
+        fraction_spot = fraction_spot[:, None].repeat(nw, axis=1)  # (nr, nw)
+        
+        # spotted mask just on the rectangle containing the largest planet disk
+        mask_rmax = mask[np.ix_(indtheta_p, indr_p)]
+        mask_rmax = mask_rmax[:, :, None].repeat(nw, axis=2).astype(int)
+        mask_rmax *= (~(mask_p.astype(bool))).astype(int)
+        # integration along theta
+        fraction_spot[indr_p] += (mask_rmax.sum(0)*self.deltath)/(2.*np.pi)  ################
         ff_spot = np.sum(fraction_spot * 2. * np.pi *
                          self.radii[:, None] * self.deltar, axis=0) / np.pi
-
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
 
