@@ -120,8 +120,6 @@ class StarModel(BaseStarModel):
         # planet mask for various radii, and indices of the polar rectangle surrounding the largest radii
         mask_p, indr_p, indtheta_p = self.create_mask_planet(y0p, z0p, rplanet)
 
-
-
         # planet integration
         fraction_planet = np.zeros((len(self.radii), nr))
         fraction_planet[indr_p] = ((mask_p/2).sum(0)*self.deltath)/(2.*np.pi)
@@ -129,19 +127,20 @@ class StarModel(BaseStarModel):
                            self.radii[:, None]*self.deltar, axis=0) / np.pi
 
         # spot integration
-        # mask = mask[:, :, None].repeat(nr, axis=2)
-        
+
         mask_nop = mask.copy()
         mask_nop[np.ix_(indtheta_p, indr_p)] = 0
-        fraction_spot = (mask_nop.sum(0) * self.deltath)/(2.*np.pi)                  # Assumes spot_value == 1 !!
-        
-        mask_rmax = mask[np.ix_(indtheta_p, indr_p)][:,:,None].repeat(nr, axis=2)
+        # Assumes spot_value == 1 !!
+        fraction_spot = (mask_nop.sum(0) * self.deltath)/(2.*np.pi)
+
+        mask_rmax = mask[np.ix_(indtheta_p, indr_p)][:,
+                                                     :, None].repeat(nr, axis=2)
         mask_rmax *= ~(mask_p.astype(bool))
-        fraction_spot = fraction_spot[:,None].repeat(nr, axis=1)
+        fraction_spot = fraction_spot[:, None].repeat(nr, axis=1)
         fraction_spot[indr_p] = ((mask_rmax).sum(0)*self.deltath)/(2.*np.pi)
-        
+
         ff_spot = np.sum(fraction_spot * 2. * np.pi *
-                         self.radii[:, None] * self.deltar) / np.pi
+                         self.radii[:, None] * self.deltar, axis=0) / np.pi
 
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
