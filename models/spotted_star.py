@@ -1,5 +1,7 @@
 
 import numpy as np
+import matplotlib.pylab as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 
 class BaseStarModel(object):
@@ -26,6 +28,41 @@ class BaseStarModel(object):
         self.Th = np.arccos(self.Z)
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
+
+    def show(self, spotted_mask,  yp=None, zp=None, rp=None, ax=None, axis=False,
+             cm=LinearSegmentedColormap.from_list("custom", ["#fff305", "#ffa805"])):
+        if ax is None:
+            _, ax = plt.subplots()
+        plt.pcolormesh(self.Y, self.Z, spotted_mask,
+                       shading='nearest', cmap=cm, antialiased=True)  # 'YlGn', vmin=0, vmax=3)
+        plt.axhline(0, color='black', label='equator',
+                    linestyle='dashed', linewidth=0.7)
+        ax.add_patch(plt.Circle((0, 0), 1, edgecolor='black',
+                     facecolor='none', linewidth=0.4))
+
+        # Show planet path if yp is provided
+        if yp is not None:
+            if hasattr(rp, '__len__'):
+                warnings.warn(
+                    'only one radius is supported, taking the largest radius')
+                rp = np.max(rp)
+            if not hasattr(yp, '__len__'):
+                yp = [yp]
+                assert not hasattr(zp, '__len__')
+                zp = [zp]
+            else:
+                assert len(yp) == len(zp)
+                list_alpha = np.linspace(0.5, 1, len(yp))
+            for i in range(len(zp)):
+                ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
+                                        facecolor='black', alpha=list_alpha[i]))
+        plt.axis('equal')
+        if not axis:
+            plt.axis('off')
+        else:
+            plt.xlabel('Y')
+            plt.ylabel('Z', rotation=0)
+        return ax
 
 
 def spher_to_cart(lat, lon):
