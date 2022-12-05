@@ -28,11 +28,11 @@ class TestStarModel(unittest.TestCase):
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
         # single spots
-        for lat in np.array([0, np.pi/2]):
-            for lon in [0, np.pi/2]:
+        for lat in np.array([0, 90]):
+            for lon in [0, 90]:
                 for rspot in [0., 0.1, 0.5]:
                     mask, ff = smodel.lc_mask(lat, lon, rspot)
-                    mask0, ff0 = ref_smodel.lc_mask(lat *180/np.pi, lon*180/np.pi, rspot)
+                    mask0, ff0 = ref_smodel.lc_mask(lat, lon, rspot)
                     try:
                         self.assertTrue(np.isclose(ff, ff0).all())
                         self.assertTrue(np.isclose(mask, mask0).all())
@@ -48,11 +48,11 @@ class TestStarModel(unittest.TestCase):
         logging.info(f"\n This code's execution time: {t1} ")
 
         # Multiple spots
-        lat = np.array([0, np.pi/4])
-        lon = np.array([0, np.pi/4])
+        lat = np.array([0, 45])
+        lon = np.array([0, 45])
         rspot = np.array([0.2, 0.1])
         mask, _ = smodel.lc_mask(lat, lon, rspot)
-        mask0, _ = ref_smodel.lc_mask(lat*180/np.pi, lon*180/np.pi, rspot)
+        mask0, _ = ref_smodel.lc_mask(lat, lon, rspot)
         self.assertTrue(np.isclose(1+mask, 1+mask0).all())
 
         # Speed tests
@@ -71,13 +71,11 @@ class TestStarModel(unittest.TestCase):
         smodel = StarModel(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
         
-        lat = np.pi/4
-        lon = np.pi/4
+        lat = 45
+        lon = 45
         rspot = 0.1
         mask, _ = smodel.lc_mask(lat, lon, rspot)
         
-        lat = lat * 180 / np.pi
-        lon = lon * 180 / np.pi
         ref_mask,_ = ref_smodel.lc_mask(lat, lon, rspot)
         self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
 

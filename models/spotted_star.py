@@ -67,6 +67,8 @@ class BaseStarModel(object):
 
 
 def spher_to_cart(lat, lon):
+    lat = lat * np.pi / 180
+    lon = lon * np.pi / 180
     x = np.cos(lat) * np.cos(lon)
     y = np.cos(lat) * np.sin(lon)
     z = np.sin(lat)
@@ -132,11 +134,11 @@ class StarModel(BaseStarModel):
 
     def lc_mask(self, lat, lon, rspot):
         mask = np.zeros([self.nth, self.nr], bool)
-        if isinstance(lat, (int, float)):
+        if not hasattr(lat, '__len__'):
             lat = [lat]
-        if isinstance(lon, (int, float)):
+        if not hasattr(lon, '__len__'):
             lon = [lon]
-        if isinstance(rspot, (int, float)):
+        if not hasattr(rspot, '__len__'):
             rspot = [rspot]
         for i in range(len(lat)):
             mask1, indr, indtheta = self.create_mask_spot(
@@ -255,11 +257,11 @@ class OriginalStarModel(BaseStarModel):
     def lc_mask(self, lat, lon, rspot):
         mask = np.zeros([self.nth, self.nr], dtype=bool)
 
-        if isinstance(lat, (int, float)):
+        if not hasattr(lat, '__len__'):
             lat = [lat]
-        if isinstance(lon, (int, float)):
+        if not hasattr(lon, '__len__'):
             lon = [lon]
-        if isinstance(rspot, (int, float)):
+        if not hasattr(rspot, '__len__'):
             rspot = [rspot]
         # print(mask)
         for i in range(len(lat)):
