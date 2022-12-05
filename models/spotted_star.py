@@ -11,7 +11,7 @@ class BaseStarModel(object):
     spot_value = 1
     planet_value = 2
 
-    def __init__(self, nr: int = 100,  nth: int = 100):
+    def __init__(self, nr: int = 1000,  nth: int = 1000):
         self.nr = nr
         self.nth = nth
         self.radii = (0.5 + np.arange(self.nr)) / self.nr
