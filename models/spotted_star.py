@@ -38,6 +38,8 @@ class BaseStarModel(object):
                        shading='nearest', cmap=cm, antialiased=True)  # 'YlGn', vmin=0, vmax=3)
         plt.axhline(0, color='black', label='equator',
                     linestyle='dashed', linewidth=0.7)
+        plt.axvline(0, color='black', label='meridian',
+                    linestyle='dashed', linewidth=0.7)
         ax.add_patch(plt.Circle((0, 0), 1, edgecolor='black',
                      facecolor='none', linewidth=0.4))
 
