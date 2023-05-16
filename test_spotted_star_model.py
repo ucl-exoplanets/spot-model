@@ -41,12 +41,6 @@ class TestStarModel(unittest.TestCase):
                             f"\n Error at: lon={lon}, lat={lat}")# --> ff0 = {ff0}, ff = {ff}")
                         raise e
 
-        # Speed test
-        t0 = timeit.timeit(lambda:  ref_smodel.lc_mask(0, 0, 0.1), number=50)
-        t1 = timeit.timeit(lambda:  smodel.lc_mask(0, 0, 0.1), number=50)
-        logging.info(f"\n Palermo's execution time: {t0} ")
-        logging.info(f"\n This code's execution time: {t1} ")
-
         # Multiple spots
         lat = np.array([0, 45])
         lon = np.array([0, 45])
@@ -60,11 +54,6 @@ class TestStarModel(unittest.TestCase):
             lat, lon, rspot), number=50)
         lat = lat * 180 / np.pi
         lon = lon * 180 / np.pi
-        t1 = timeit.timeit(lambda:  smodel.lc_mask(lat, lon, rspot), number=50)
-        logging.info(f"\n Palermo's execution time (2 spots): {t0} ")
-        logging.info(f"\n This code's execution time (2 spots): {t1} ")
-        #self.assertLess(t1, t0)
-
 
 
     def test_full_mask(self, nr=1000, nth=1000):
@@ -109,15 +98,6 @@ class TestStarModel(unittest.TestCase):
         self.assertEqual(result[-1], ref_result[-1])
         self.assertTrue(np.isclose(result[0].flatten(), ref_result[0]).all())
         self.assertTrue(np.isclose(result[1].flatten(), ref_result[1]).all())
-        
-        
-        # Speed tests
-        t0 = timeit.timeit(lambda: ref_smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet), number=50)
-        t1 = timeit.timeit(lambda: smodel.lc_mask_with_planet(mask, y0p, z0p, rplanet), number=50)
-        t2 = timeit.timeit(lambda: smodel.lc_mask_with_planet(mask, y0p, z0p, [rplanet]*10), number=50)
-        logging.info(f"\n Palermo's execution time (1 planet rad): {t0} ")
-        logging.info(f"\n This code's execution time (1 planet rad): {t1} ")
-        logging.info(f"\n This code's execution time (10 planet rad): {t2} ")
 
 
 if __name__ == '__main__':
