@@ -50,6 +50,7 @@ class BaseStarModel(object):
                 yp = [yp]
                 assert not hasattr(zp, '__len__')
                 zp = [zp]
+                list_alpha = [1.]
             else:
                 assert len(yp) == len(zp)
                 list_alpha = np.linspace(0.5, 1, len(yp))
