@@ -4,7 +4,7 @@ from spot_model._base_star import _BaseStar
 
 
 class OriginalStarModel(_BaseStar):
-    """original Palermo's code wrapped into a class"""
+    """original spotted star model code wrapped into a class"""
 
     def spot_lc(self, lat, lon, rfeature):
         x0 = np.sin(lat) * np.cos(lon)

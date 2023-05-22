@@ -7,6 +7,7 @@ from spot_model._base_star import _BaseStar
 
 
 class SpottedStar(_BaseStar):
+    """Star model allowing fast 2D disk integration with spot(s) and transiting planet(s)"""
     def create_mask_feat(self, y, z, rfeat, x=None):
         r0 = np.sqrt(y**2 + z**2)
 

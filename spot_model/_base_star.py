@@ -7,7 +7,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 
 class _BaseStar(object):
-    """Palermo star model"""
+    """Base class for star model as disk parameterised in polar coordinates"""
     star_value = 0
     spot_value = 1
     planet_value = 2
