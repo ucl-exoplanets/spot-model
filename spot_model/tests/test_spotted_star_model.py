@@ -4,7 +4,9 @@ import logging
 
 import numpy as np
 
-from models.spotted_star import StarModel, OriginalStarModel
+from spot_model.spotted_star import SpottedStar
+from spot_model.tests.original_model import OriginalStarModel
+
 
 EPS = 1e-16
 
@@ -16,7 +18,7 @@ class TestStarModel(unittest.TestCase):
 
     def test_stars(self):
         for (nr, nth) in [(100, 100), (200, 500)]:
-            star_model = StarModel(nr=nr, nth=nth)
+            star_model = SpottedStar(nr=nr, nth=nth)
             self.assertEqual(star_model.nr, nr)
             self.assertEqual(star_model.nth, nth)
             self.assertEqual(star_model.radii.shape, (nr,))
@@ -25,7 +27,7 @@ class TestStarModel(unittest.TestCase):
             self.assertEqual(star_model.Z.shape, (nth, nr))
 
     def test_spot_mask(self, nr=1000, nth=1000):
-        smodel = StarModel(nr=nr, nth=nth)
+        smodel = SpottedStar(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
         # single spots
@@ -57,7 +59,7 @@ class TestStarModel(unittest.TestCase):
         lon = lon * 180 / np.pi
 
     def test_full_mask(self, nr=1000, nth=1000):
-        smodel = StarModel(nr=nr, nth=nth)
+        smodel = SpottedStar(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
         lat = 45
@@ -69,7 +71,7 @@ class TestStarModel(unittest.TestCase):
         self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
 
     def test_planet_mask(self, nr=1000, nth=1000):
-        smodel = StarModel(nr=nr, nth=nth)
+        smodel = SpottedStar(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
         rplanet = 0.1
@@ -80,7 +82,7 @@ class TestStarModel(unittest.TestCase):
         self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
 
     def test_integration_one_spot_and_planet(self, nr=1000, nth=1000):
-        smodel = StarModel(nr=nr, nth=nth)
+        smodel = SpottedStar(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
         # Central spot and planet

@@ -1,10 +1,10 @@
 import timeit
 
-from models.spotted_star import StarModel, OriginalStarModel
+from spot_model.spotted_star import SpottedStar, OriginalStarModel
 
 
 def run_speed_test(nr=1000, nth=1000, number=50):
-    smodel = StarModel(nr=nr, nth=nth)
+    smodel = SpottedStar(nr=nr, nth=nth)
     ref_smodel = OriginalStarModel(nr=nr, nth=nth)
     
     lat = 0
