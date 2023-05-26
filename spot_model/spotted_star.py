@@ -173,7 +173,7 @@ class SpottedStar(_BaseStar):
 
         theta0 = np.arctan2(z, y)
         theta0 = theta0 % (2. * np.pi)
-        d_theta = np.sqrt(2.) * rfeatmax / r0
+        d_theta = np.sqrt(2.) * rfeatmax / (r0+1e-32)
         theta_min = theta0 - d_theta
         theta_max = theta0 + d_theta
 
