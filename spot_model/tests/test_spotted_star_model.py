@@ -34,7 +34,7 @@ class TestStarModel(unittest.TestCase):
         for lat in np.array([0, 90]):
             for lon in [0, 90]:
                 for rspot in [0., 0.1, 0.5]:
-                    mask, ff = smodel.lc_mask(lat, lon, rspot)
+                    mask, ff = smodel._compute_full_spotted_mask(lat, lon, rspot)
                     mask0, ff0 = ref_smodel.lc_mask(lat, lon, rspot)
                     try:
                         self.assertTrue(np.isclose(ff, ff0).all())
@@ -48,7 +48,7 @@ class TestStarModel(unittest.TestCase):
         lat = np.array([0, 45])
         lon = np.array([0, 45])
         rspot = np.array([0.2, 0.1])
-        mask, _ = smodel.lc_mask(lat, lon, rspot)
+        mask, _ = smodel._compute_full_spotted_mask(lat, lon, rspot)
         mask0, _ = ref_smodel.lc_mask(lat, lon, rspot)
         self.assertTrue(np.isclose(1+mask, 1+mask0).all())
 
@@ -65,7 +65,7 @@ class TestStarModel(unittest.TestCase):
         lat = 45
         lon = 45
         rspot = 0.1
-        mask, _ = smodel.lc_mask(lat, lon, rspot)
+        mask, _ = smodel._compute_full_spotted_mask(lat, lon, rspot)
 
         ref_mask, _ = ref_smodel.lc_mask(lat, lon, rspot)
         self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
@@ -77,7 +77,7 @@ class TestStarModel(unittest.TestCase):
         rplanet = 0.1
         y = -0.5
         z = -0.5
-        mask, _, _ = smodel.create_mask_planet(y, z, rplanet)
+        mask, _, _ = smodel._compute_planet_mask(y, z, rplanet)
         ref_mask, _, _ = ref_smodel.planet_lc(y, z, rplanet)
         self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
 
@@ -107,9 +107,9 @@ class TestStarModel(unittest.TestCase):
 
         for k, kwargs in fixtures.items():
             logging.info(f"\n fixture {k}")
-            mask, fraction_unocculted = smodel.lc_mask(  #fraction "unocculted" is misleading -> as if there was no planet
+            mask, fraction_unocculted = smodel._compute_full_spotted_mask(  #fraction "unocculted" is misleading -> as if there was no planet
                 kwargs['lat'], kwargs['lon'], kwargs['rspot'])
-            fraction_spot, fraction_planet, ff_spot, ff_planet = smodel.lc_mask_with_planet(
+            fraction_spot, fraction_planet, ff_spot, ff_planet = smodel._update_full_mask_with_planet(
                 mask, kwargs['y0p'], kwargs['z0p'], kwargs['rplanet'])
             ref_fraction_spot, ref_fraction_planet, ref_ff_spot, ref_ff_planet = ref_smodel.lc_mask_with_planet(
                 mask, kwargs['y0p'], kwargs['z0p'], kwargs['rplanet'])
