@@ -65,7 +65,7 @@ class _BaseStar(object):
         if ax is None:
             _, ax = plt.subplots()
         plt.pcolormesh(self.Y, self.Z, spotted_mask,
-                       shading='nearest', cmap=cm, antialiased=True)
+                       shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
         plt.axhline(0, color='black', label='equator',
                     linestyle='dashed', linewidth=0.5)
         plt.axvline(0, color='black', label='meridian',
