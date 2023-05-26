@@ -7,6 +7,7 @@ class OriginalStarModel(_BaseStar):
     """original spotted star model code wrapped into a class"""
 
     def spot_lc(self, lat, lon, rfeature):
+        # lat / lon in radians
         x0 = np.sin(lat) * np.cos(lon)
         y0 = np.sin(lat) * np.sin(lon)
         z0 = np.cos(lat)
