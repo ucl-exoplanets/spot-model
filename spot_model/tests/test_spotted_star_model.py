@@ -4,21 +4,17 @@ import logging
 
 import numpy as np
 
+from spot_model._base_star import _BaseStar
 from spot_model.spotted_star import SpottedStar
 from spot_model.tests.original_model import OriginalStarModel
 
 
 EPS = 1e-16
 
-class TestStarModel(unittest.TestCase):
-    logging.basicConfig(level=logging.INFO)
-
-    def setUp(self):
-        ...
-
-    def test_stars(self):
-        for (nr, nth) in [(100, 100), (200, 500)]:
-            star_model = SpottedStar(nr=nr, nth=nth)
+class TestBaseStar(unittest.TestCase):
+    def test_polar_grid(self):
+        for (nr, nth) in [(10, 10), (20, 50)]:
+            star_model = _BaseStar(nr=nr, nth=nth)
             self.assertEqual(star_model.nr, nr)
             self.assertEqual(star_model.nth, nth)
             self.assertEqual(star_model.radii.shape, (nr,))
@@ -26,6 +22,13 @@ class TestStarModel(unittest.TestCase):
             self.assertEqual(star_model.theta.shape, (nth,))
             self.assertEqual(star_model.Z.shape, (nth, nr))
 
+    def test_show(self):
+        star_model = _BaseStar(nr=10, nth=10)
+        star_model.show(np.zeros((10, 10)))
+        star_model.show(np.zeros((10, 10)), 0, 0, 0.05)
+
+
+class TestSpottedStar(unittest.TestCase):
     def test_spot_mask(self, nr=1000, nth=1000):
         smodel = SpottedStar(nr=nr, nth=nth)
         ref_smodel = OriginalStarModel(nr=nr, nth=nth)
