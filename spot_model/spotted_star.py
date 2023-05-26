@@ -37,6 +37,36 @@ class SpottedStar(_BaseStar):
 
         self.add_spot(lat, lon, rspot)
 
+    @property
+    def mask(self) -> ndarray:
+        """Access the mask for the spotted star. 
+
+        Returns:
+            ndarray: 2D int mask for the spotted star with 0 for the plage and 1 for spots.
+                First dimension along polar angle and second dimension along polar radius.
+        """
+        return self._mask
+
+    @property
+    def rff(self) -> ndarray:
+        """Get the radial spot filling factor of this star.
+
+        Without any occulting planet.
+        Returns:
+            ndarray: array of dim (nr) ith the spot radial filling factor
+        """
+        return self.compute_rff()
+
+    @property
+    def ff(self) -> Number:
+        """Get the spot filling factor of this star.
+
+        Without any occulting planet.
+        Returns:
+            ndarray: Computed spot filling factor
+        """
+        return self.compute_ff()
+
     def add_spot(self, lat: NumericOrIterable, lon: NumericOrIterable, rspot: NumericOrIterable):
         """Add one or several spots to the star object.
 
@@ -50,9 +80,9 @@ class SpottedStar(_BaseStar):
         """
         if lat is not None and lon is not None and rspot is not None:
             lat, lon, rspot = parse_args_lists(lat, lon, rspot)
-            if not (np.greater_equal(lat,-90).all() and np.less_equal(lat, 90).all()):
+            if not (np.greater_equal(lat, -90).all() and np.less_equal(lat, 90).all()):
                 raise ValueError('latitude is defined between -90 and 90°')
-            if not (np.greater_equal(lat,-180).all() and np.less_equal(lon, 180).all()):
+            if not (np.greater_equal(lat, -180).all() and np.less_equal(lon, 180).all()):
                 warnings('longitude is here defined between -180 and 180°')
             if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
                 raise ValueError('rspot should be between 0 and 1')
@@ -61,20 +91,11 @@ class SpottedStar(_BaseStar):
             self.spots['lat'] += lat
             self.spots['lon'] += lon
             self.spots['r'] += rspot
+            self._update_mask()
+
         elif lat is not None or lon is not None or rspot is not None:
             raise ValueError(
                 "if any of 'lat', 'lon', 'rspot' is specified, these three arguments should be specified too")
-
-    def compute_star_mask(self) -> ndarray:
-        """Create the full 2D mask with defined spot(s).
-
-        Returns:
-            ndarray: 2D int mask for the spotted star with 0 for the plage and 1 for spots.
-                First dimension along polar angle and second dimension along polar radius.
-        """
-        mask, _ = self._compute_full_spotted_mask(
-            self.spots['lat'], self.spots['lon'], self.spots['r'])
-        return mask
 
     def compute_rff(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None) -> Union[ndarray, Tuple[ndarray, ndarray]]:
         """Compute the "observed radial filling factor" of the star.
@@ -92,18 +113,15 @@ class SpottedStar(_BaseStar):
                 or tuple with observed spot and planet radial filling factors (each of dimension (nr, nw)), 
                 where nw is the number of planet radii or wavelengths.
         """
-        # Compute the 'observed' radial filling factor
-        # output mask dimension will be (nr) or (nr, W) if multiple wavelengths
-        mask = self.compute_star_mask()
         if yp is not None and zp is not None and rp is not None:  # occulted situation
             rff_spot, rff_planet, _, _ = self._update_full_mask_with_planet(
-                mask, yp, zp, rp)
+                self.mask, yp, zp, rp)
             return rff_spot, rff_planet
         elif yp is not None or zp is not None or rp is not None:
             raise ValueError(
                 "if any of 'yp', 'zp', 'rp' is specified, these three arguments should be specified too")
         else:
-            rff = mask.sum(0) * self.deltath / (2. * np.pi)
+            rff = self.mask.sum(0) * self.deltath / (2. * np.pi)
             return rff
 
     def compute_ff(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None) -> Union[Number, Tuple[NumericOrIterable, NumericOrIterable]]:
@@ -139,24 +157,16 @@ class SpottedStar(_BaseStar):
 
             return ff_spot
 
-    def show(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None):
-        """Display the star with spot(s) and optional transiting planet.
+    #####
+    def _update_mask(self):
+        """Compute the full 2D mask with defined spot(s).
 
-        Args:
-            yp (Number, optional): planet y position. Defaults to None.
-            zp (Number, optional): planet z position. Defaults to None.
-            rp (NumericOrIterable, optional): planet radius - only one radius supported for now. Defaults to None.
-            ax (Optional[Axes], optional): base matplotlib axe to use. Defaults to None.
-            show_axis (bool, optional): whether to show the star prime meridian and equator. Defaults to False.
-            cm (Colormap, optional): colormap for the star. Defaults to default_colormap.
-
-        Returns:
-            Axes: matplotlib Axe with the created plot
+        TODO: incrementally add to the previously defined mask instead of replacing
         """
-        star_mask = self.compute_star_mask()
-        return super().show(star_mask, yp, zp, rp)
+        mask, _ = self._compute_full_spotted_mask(
+            self.spots['lat'], self.spots['lon'], self.spots['r'])
+        self._mask = mask
 
-    ###
     def _create_mask_feat(self, y, z, rfeat, x=None):
         r0 = np.sqrt(y**2 + z**2)
 

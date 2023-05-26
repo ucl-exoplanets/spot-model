@@ -45,7 +45,9 @@ class _BaseStar(object):
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
 
-    def show(self, spotted_mask: ndarray,  yp: Number = None, zp: Number = None, rp: Number = None,
+        self._mask = np.zeros([self.nth, self.nr])
+
+    def show(self, yp: Number = None, zp: Number = None, rp: Number = None,
              ax: Optional[Axes] = None, show_axis: bool = False,
              cm: Colormap = default_colormap) -> Axes:
         """Display the star with spot(s) and optional transiting planet.
@@ -64,7 +66,7 @@ class _BaseStar(object):
         """
         if ax is None:
             _, ax = plt.subplots()
-        plt.pcolormesh(self.Y, self.Z, spotted_mask,
+        plt.pcolormesh(self.Y, self.Z, self._mask,
                        shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
         plt.axhline(0, color='black', label='equator',
                     linestyle='dashed', linewidth=0.5)
