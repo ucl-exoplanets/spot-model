@@ -1,10 +1,8 @@
-
 import warnings
 from numbers import Number
 from typing import Union, Iterable, Optional
 
 import numpy as np
-from numpy import ndarray
 import matplotlib.pylab as plt
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.axes import Axes

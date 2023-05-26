@@ -1,4 +1,3 @@
-import warnings
 from numbers import Number
 from typing import Union, Iterable, Optional, Tuple
 
@@ -38,7 +37,7 @@ def spher_to_cart(lat: NumericOrIterable, lon: NumericOrIterable) -> Tuple[Numer
     Returns:
         Tuple[NumericOrIterable, NumericOrIterable, NumericOrIterable]: cartesian corrdinates x, y, z
     """
-    if not (np.greater_equal(lat,-90).all() and np.less_equal(lat, 90).all()):
+    if not (np.greater_equal(lat, -90).all() and np.less_equal(lat, 90).all()):
         raise ValueError('latitude is defined between -90 and 90°')
     lat = lat * np.pi / 180
     lon = lon * np.pi / 180
