@@ -1,8 +1,9 @@
 import warnings
 from numbers import Number
-from typing import Union, Iterable, Optional
+from typing import Union, Iterable, Optional, Tuple
 
 import numpy as np
+from numpy import ndarray
 
 from spot_model.utils import parse_args_lists, spher_to_cart
 from spot_model._base_star import _BaseStar
@@ -17,30 +18,72 @@ class SpottedStar(_BaseStar):
                  lat: NumericOrIterable = None,
                  lon: NumericOrIterable = None,
                  rspot: NumericOrIterable = None):
+        """Create a spotted star object.
+
+        Args:
+            nr (int, optional): number of quantised values along polar radius. Defaults to 1000.
+            nth (int, optional): number of quantised values along theta (polar angle). Defaults to 1000.
+            lat (NumericOrIterable, optional): spot(s) latitude(s) in degrees.
+                Defaults to None. If defined, must be of same dimension as lon and rspot.
+            lon (NumericOrIterable, optional): spot(s) longitude(s) in degrees. 
+                Defaults to None. If defined, must be of same dimension as lat and rspot.
+            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+                Defaults to None. If defined, must be of same dimension as lat and lon.
+        """
         super().__init__(nr, nth)
         self.spots = {'lat': [],
                       'lon': [],
                       'r': []}
 
+        self.add_spot(lat, lon, rspot)
+
+    def add_spot(self, lat: NumericOrIterable, lon: NumericOrIterable, rspot: NumericOrIterable):
+        """Add one or several spots to the star object.
+
+        Args:
+            lat (NumericOrIterable, optional): spot(s) latitude(s) in degrees.
+                Defaults to None. If defined, must be of same dimension as lon and rspot.
+            lon (NumericOrIterable, optional): spot(s) longitude(s) in degrees. 
+                Defaults to None. If defined, must be of same dimension as lat and rspot.
+            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+                Defaults to None. If defined, must be of same dimension as lat and lon.
+        """
         if lat is not None and lon is not None and rspot is not None:
-            self.add_spot(lat, lon, rspot)
+            lat, lon, rspot = parse_args_lists(lat, lon, rspot)
+            self.spots['lat'] += lat
+            self.spots['lon'] += lon
+            self.spots['r'] += rspot
         elif lat is not None or lon is not None or rspot is not None:
             raise ValueError(
                 "if any of 'lat', 'lon', 'rspot' is specified, these three arguments should be specified too")
 
-    def add_spot(self, lat: NumericOrIterable, lon: NumericOrIterable, rspot: NumericOrIterable):
-        lat, lon, rspot = parse_args_lists(lat, lon, rspot)
-        self.spots['lat'] += lat
-        self.spots['lon'] += lon
-        self.spots['r'] += rspot
+    def compute_star_mask(self) -> ndarray:
+        """Create the full 2D mask with defined spot(s).
 
-    def compute_star_mask(self):
-        # output mask dimension will be (nt, nr) or (nt, nr, T) or (nt, nr, T, W)
+        Returns:
+            ndarray: 2D int mask for the spotted star with 0 for the plage and 1 for spots.
+                First dimension along polar angle and second dimension along polar radius.
+        """
         mask, _ = self._compute_full_spotted_mask(
             self.spots['lat'], self.spots['lon'], self.spots['r'])
         return mask
 
-    def compute_rff(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None):
+    def compute_rff(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None) -> Union[ndarray, Tuple[ndarray, ndarray]]:
+        """Compute the "observed radial filling factor" of the star.
+
+        If no planetary argument is provided (yp, zp, rp), then the method will return the filling factor in each annulus defined by the polar grid.
+        If any planetary argument is provided (yp, zp, rp), then all of them should be provided.
+        In that case, the method will also return the observed radial filling factor corresponding to the planet.
+        Args:
+            yp (Number, optional): planet y position.  Defaults to None.
+            zp (Number, optional): planet z position. Defaults to None.
+            rp (NumericOrIterable, optional): planet radius(es). Defaults to None.
+
+        Returns:
+            Union[ndarray, Tuple[ndarray, ndarray]]: Either spot radial filling factor (of dimension (nr,))
+                or tuple with observed spot and planet radial filling factors (each of dimension (nr, nw)), 
+                where nw is the number of planet radii or wavelengths.
+        """
         # Compute the 'observed' radial filling factor
         # output mask dimension will be (nr) or (nr, W) if multiple wavelengths
         mask = self.compute_star_mask()
@@ -55,10 +98,21 @@ class SpottedStar(_BaseStar):
             rff = mask.sum(0) * self.deltath / (2. * np.pi)
             return rff
 
-    def compute_ff(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None):
-        # Compute the 'observed' filling factor
-        # (planet independent / out of transit)
-        # is ff defined radially or 3D - orginally?
+    def compute_ff(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None) -> Union[Number, Tuple[NumericOrIterable, NumericOrIterable]]:
+        """Compute the "observed filling factor" of the star.
+
+        If no planetary argument is provided (yp, zp, rp), then the method will return the filling factor of the star as scalar number.
+        If any planetary argument is provided (yp, zp, rp), then all of them should be provided.
+        In that case, the method will also return the observed area ratio of the star occulted by the planet.
+        Args:
+            yp (Number, optional): planet y position.  Defaults to None.
+            zp (Number, optional): planet z position. Defaults to None.
+            rp (NumericOrIterable, optional): planet radius(es). Defaults to None.
+        Returns:
+            Union[Number, Tuple[NumericOrIterable, NumericOrIterable]]: Either spot filling factor
+                or tuple with observed spot and planet filling factors (each of length nw), 
+                where nw is the number of planet radii or wavelengths. 
+        """
 
         if yp is not None and zp is not None and rp is not None:  # occulted situation
             rff_spot, rff_planet = self.compute_rff(yp, zp, rp)
@@ -78,6 +132,19 @@ class SpottedStar(_BaseStar):
             return ff_spot
 
     def show(self, yp: Number = None, zp: Number = None, rp: NumericOrIterable = None):
+        """Display the star with spot(s) and optional transiting planet.
+
+        Args:
+            yp (Number, optional): planet y position. Defaults to None.
+            zp (Number, optional): planet z position. Defaults to None.
+            rp (NumericOrIterable, optional): planet radius - only one radius supported for now. Defaults to None.
+            ax (Optional[Axes], optional): base matplotlib axe to use. Defaults to None.
+            show_axis (bool, optional): whether to show the star prime meridian and equator. Defaults to False.
+            cm (Colormap, optional): colormap for the star. Defaults to default_colormap.
+
+        Returns:
+            Axes: matplotlib Axe with the created plot
+        """
         star_mask = self.compute_star_mask()
         return super().show(star_mask, yp, zp, rp)
 

@@ -1,13 +1,21 @@
 
 import warnings
+from numbers import Number
+from typing import Union, Iterable, Optional
 
 import numpy as np
+from numpy import ndarray
 import matplotlib.pylab as plt
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.axes import Axes
+from matplotlib.colors import Colormap
 
+NumericOrIterable = Optional[Union[Number, Iterable[Number]]]
+
+default_colormap = LinearSegmentedColormap.from_list("custom", ["#fff305", "#ffa805"])
 
 class _BaseStar(object):
-    """Base class for star model as disk parameterised in polar coordinates"""
+    """Base class for star model as disk parameterised in polar coordinates."""
     star_value = 0
     spot_value = 1
     planet_value = 2
@@ -31,12 +39,27 @@ class _BaseStar(object):
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
 
-    def show(self, spotted_mask,  yp=None, zp=None, rp=None, ax=None, axis=False,
-             cm=LinearSegmentedColormap.from_list("custom", ["#fff305", "#ffa805"])):
+    def show(self, spotted_mask: ndarray,  yp: Number=None, zp: Number=None, rp: Number=None, 
+             ax: Optional[Axes]=None, show_axis: bool=False,
+             cm: Colormap=default_colormap) -> Axes:
+        """Display the star with spot(s) and optional transiting planet.
+
+        Args:
+            spotted_mask (ndarray): spotted star mask (2D ndarray)
+            yp (Number, optional): planet y position. Defaults to None.
+            zp (Number, optional): planet z position. Defaults to None.
+            rp (NumericOrIterable, optional): planet radius - only one radius supported for now. Defaults to None.
+            ax (Optional[Axes], optional): base matplotlib axe to use. Defaults to None.
+            show_axis (bool, optional): whether to show the star prime meridian and equator. Defaults to False.
+            cm (Colormap, optional): colormap for the star. Defaults to default_colormap.
+
+        Returns:
+            Axes: matplotlib Axe with the created plot
+        """
         if ax is None:
             _, ax = plt.subplots()
         plt.pcolormesh(self.Y, self.Z, spotted_mask,
-                       shading='nearest', cmap=cm, antialiased=True)  # 'YlGn', vmin=0, vmax=3)
+                       shading='nearest', cmap=cm, antialiased=True)
         plt.axhline(0, color='black', label='equator',
                     linestyle='dashed', linewidth=0.5)
         plt.axvline(0, color='black', label='meridian',
@@ -62,7 +85,7 @@ class _BaseStar(object):
                 ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
                                         facecolor='black', alpha=list_alpha[i]))
         plt.axis('equal')
-        if not axis:
+        if not show_axis:
             plt.axis('off')
         else:
             plt.xlabel('Y')
