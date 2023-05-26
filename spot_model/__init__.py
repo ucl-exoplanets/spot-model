@@ -1,0 +1,1 @@
+from .spotted_star import SpottedStar
