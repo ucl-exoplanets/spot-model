@@ -12,15 +12,21 @@ from matplotlib.colors import Colormap
 
 NumericOrIterable = Optional[Union[Number, Iterable[Number]]]
 
-default_colormap = LinearSegmentedColormap.from_list("custom", ["#fff305", "#ffa805"])
+default_colormap = LinearSegmentedColormap.from_list(
+    "custom", ["#fff305", "#ffa805"])
+
 
 class _BaseStar(object):
     """Base class for star model as disk parameterised in polar coordinates."""
     star_value = 0
     spot_value = 1
     planet_value = 2
-    
+
     def __init__(self, nr: int = 1000,  nth: int = 1000):
+        assert isinstance(nr, int)
+        assert nr > 0
+        assert isinstance(nth, int)
+        assert nth > 0
         self.nr = nr
         self.nth = nth
         self.radii = (0.5 + np.arange(self.nr)) / self.nr
@@ -39,9 +45,9 @@ class _BaseStar(object):
         self.Ph = np.arcsin(self.Y / np.sin(self.Th))
         self.X = np.sin(self.Th) * np.cos(self.Ph)
 
-    def show(self, spotted_mask: ndarray,  yp: Number=None, zp: Number=None, rp: Number=None, 
-             ax: Optional[Axes]=None, show_axis: bool=False,
-             cm: Colormap=default_colormap) -> Axes:
+    def show(self, spotted_mask: ndarray,  yp: Number = None, zp: Number = None, rp: Number = None,
+             ax: Optional[Axes] = None, show_axis: bool = False,
+             cm: Colormap = default_colormap) -> Axes:
         """Display the star with spot(s) and optional transiting planet.
 
         Args:
