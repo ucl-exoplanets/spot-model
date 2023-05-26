@@ -50,6 +50,14 @@ class SpottedStar(_BaseStar):
         """
         if lat is not None and lon is not None and rspot is not None:
             lat, lon, rspot = parse_args_lists(lat, lon, rspot)
+            if not (np.greater_equal(lat,-90).all() and np.less_equal(lat, 90).all()):
+                raise ValueError('latitude is defined between -90 and 90°')
+            if not (np.greater_equal(lat,-180).all() and np.less_equal(lon, 180).all()):
+                warnings('longitude is here defined between -180 and 180°')
+            if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
+                raise ValueError('rspot should be between 0 and 1')
+            if np.isclose(rspot, 0).any():
+                warnings.warn('spot radius is close to zero')
             self.spots['lat'] += lat
             self.spots['lon'] += lon
             self.spots['r'] += rspot

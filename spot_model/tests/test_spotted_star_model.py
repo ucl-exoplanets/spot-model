@@ -11,6 +11,7 @@ from spot_model.tests.original_model import OriginalStarModel
 
 EPS = 1e-16
 
+
 class TestBaseStar(unittest.TestCase):
     def test_polar_grid(self):
         for (nr, nth) in [(10, 10), (20, 50)]:
@@ -29,123 +30,173 @@ class TestBaseStar(unittest.TestCase):
 
 
 class TestSpottedStar(unittest.TestCase):
-    def test_spot_mask(self, nr=1000, nth=1000):
-        smodel = SpottedStar(nr=nr, nth=nth)
-        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+    def test_nospot(self):
+        # spots with zero radius
+        for lat, lon, rspot in [(None, None, None),  # no spot
+                                (0, 0, 0),  # zero radius - central
+                                (45, 45, 0),  # zero radius - noncentral
+                                (0, 180, 0.5),  # hidden spot behind
+                                ]:
+            model = SpottedStar(lat=lat, lon=lon, rspot=rspot)
+            mask = model.compute_star_mask()
+            self.assertTrue(np.isclose(mask, 0).all())
+            rff = model.compute_rff()
+            self.assertTrue(np.isclose(rff, 0).all())
+            ff = model.compute_ff()
+            self.assertTrue(np.isclose(ff, 0).all())
 
-        # single spots
-        for lat in np.array([0, 90]):
-            for lon in [0, 90]:
-                for rspot in [0., 0.1, 0.5]:
-                    mask, ff = smodel._compute_full_spotted_mask(lat, lon, rspot)
-                    mask0, ff0 = ref_smodel.lc_mask(lat, lon, rspot)
-                    try:
-                        self.assertTrue(np.isclose(ff, ff0).all())
-                        self.assertTrue(np.isclose(mask, mask0).all())
-                    except AssertionError as e:
-                        logging.info(
-                            f"\n Error at: lon={lon}, lat={lat}")  # --> ff0 = {ff0}, ff = {ff}")
-                        raise e
+    def test_full_spot(self):
+        # Full spot
+        model = SpottedStar(lat=0, lon=0, rspot=1)
+        mask = model.compute_star_mask()
+        self.assertTrue(np.isclose(mask, 1).all())
+        rff = model.compute_rff()
+        self.assertTrue(np.isclose(rff, 1).all())
+        ff = model.compute_ff()
+        self.assertTrue(np.isclose(ff, 1).all())
 
-        # Multiple spots
-        lat = np.array([0, 45])
-        lon = np.array([0, 45])
-        rspot = np.array([0.2, 0.1])
-        mask, _ = smodel._compute_full_spotted_mask(lat, lon, rspot)
-        mask0, _ = ref_smodel.lc_mask(lat, lon, rspot)
-        self.assertTrue(np.isclose(1+mask, 1+mask0).all())
+    def test_one_spot(self):
+        model = SpottedStar(lat=0, lon=0, rspot=0.2)
+        mask = model.compute_star_mask()
+        rff = model.compute_rff()
+        ff = model.compute_ff()
 
-        # Speed tests
-        t0 = timeit.timeit(lambda:  ref_smodel.lc_mask(
-            lat, lon, rspot), number=50)
-        lat = lat * 180 / np.pi
-        lon = lon * 180 / np.pi
+        model2 = SpottedStar(lat=45, lon=45, rspot=0.2)
+        mask2 = model2.compute_star_mask()
+        rff2 = model2.compute_rff()
+        ff2 = model2.compute_ff()
 
-    def test_full_mask(self, nr=1000, nth=1000):
-        smodel = SpottedStar(nr=nr, nth=nth)
-        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+        self.assertTrue(np.greater_equal(mask, 0).all()
+                        and np.less_equal(mask, 1).all())
+        self.assertTrue(np.greater_equal(rff, 0).all()
+                        and np.less_equal(rff, 1).all())
+        self.assertTrue(np.greater_equal(mask2, 0).all()
+                        and np.less_equal(mask2, 1).all())
+        self.assertTrue(np.greater_equal(rff2, 0).all()
+                        and np.less_equal(rff2, 1).all())
+        self.assertTrue(0 < ff2 < ff < 1)
+        
+        # compatibility with original model
+        ref_model = OriginalStarModel()
+        ref_mask, ref_rff = ref_model.lc_mask(0, 0, 0.2)
+        
+        self.assertTrue(np.isclose(rff, ref_rff).all())
+        self.assertTrue(np.isclose(mask, ref_mask).all())
 
-        lat = 45
-        lon = 45
-        rspot = 0.1
-        mask, _ = smodel._compute_full_spotted_mask(lat, lon, rspot)
+    def test_wrong_spot(self):
+        for rspot in [-0.5, 1.5]:
+            model = SpottedStar()
+            self.assertRaises(ValueError, lambda: model.add_spot(0, 0, rspot))
 
-        ref_mask, _ = ref_smodel.lc_mask(lat, lon, rspot)
-        self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
+        for lat in [-91, 93]:
+            model = SpottedStar()
+            self.assertRaises(ValueError, lambda: model.add_spot(lat, 0, 0.1))
 
-    def test_planet_mask(self, nr=1000, nth=1000):
-        smodel = SpottedStar(nr=nr, nth=nth)
-        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+    def test_multiple_spots(self):
+        # non overlapping
+        model = SpottedStar(lat=[0,45], lon=[0,45], rspot=[0.1,0.1])
+        mask = model.compute_star_mask()
+        rff = model.compute_rff()
+        ff = model.compute_ff()
+        model1 = SpottedStar(lat=0, lon=0, rspot=0.1)
+        mask1 = model1.compute_star_mask()
+        rff1 = model1.compute_rff()
+        ff1 = model1.compute_ff()
+        model2 = SpottedStar(lat=45, lon=45, rspot=0.1)
+        mask2 = model2.compute_star_mask()
+        rff2 = model2.compute_rff()
+        ff2 = model2.compute_ff()
+        
+        self.assertTrue( np.isclose(mask, mask1+mask2).all())
+        self.assertTrue( np.isclose(rff, rff1+rff2).all())  # ok cause disjoint in radius too
+        self.assertTrue( np.isclose(ff, ff1+ff2).all())
+        
+        # fully overlapping
+        model = SpottedStar(lat=[0,0], lon=[0,0], rspot=[0.05,0.1])
+        mask = model.compute_star_mask()
+        rff = model.compute_rff()
+        ff = model.compute_ff()
+        
+        self.assertTrue( np.isclose(mask, mask1).all())
+        self.assertTrue( np.isclose(rff, rff1).all())
+        self.assertTrue( np.isclose(ff, ff1).all())
+        
+        # partially overlapping
+        model = SpottedStar(lat=[-5,5], lon=[2,5], rspot=[0.2,0.2])
+        mask = model.compute_star_mask()
+        rff = model.compute_rff()
+        ff = model.compute_ff()
+        model1 = SpottedStar(lat=-5, lon=2, rspot=0.2)
+        mask1 = model1.compute_star_mask()
+        rff1 = model1.compute_rff()
+        ff1 = model1.compute_ff()
+        model2 = SpottedStar(lat=5, lon=5, rspot=0.2)
+        mask2 = model2.compute_star_mask()
+        rff2 = model2.compute_rff()
+        ff2 = model2.compute_ff()
+    
+        self.assertTrue(np.less_equal(mask, mask1+mask2).all())
+        self.assertTrue(np.less_equal(rff, rff1+rff2+EPS).all())
+        self.assertTrue(np.less(ff, ff1+ff2).all())
 
-        rplanet = 0.1
-        y = -0.5
-        z = -0.5
-        mask, _, _ = smodel._compute_planet_mask(y, z, rplanet)
-        ref_mask, _, _ = ref_smodel.planet_lc(y, z, rplanet)
-        self.assertTrue(np.isclose(1+mask, 1+ref_mask).all())
-
-    def test_integration_one_spot_and_planet(self, nr=1000, nth=1000):
-        smodel = SpottedStar(nr=nr, nth=nth)
-        ref_smodel = OriginalStarModel(nr=nr, nth=nth)
+    def test_one_spot_and_monochrome_planet(self):
 
         # Central spot and planet
-        fixtures = {# planet inside central spot
-                    0: dict(lat=0, lon=0, rspot=0.2, y0p=0., z0p=0., rplanet=0.05),  
-                    # planet outside central spot
-                    1: dict(lat=0, lon=0, rspot=0.2, y0p=0.45, z0p=0.45, rplanet=0.05),
-                    # part of planet occulting part of centred spot
-                    2: dict(lat=0, lon=0, rspot=0.2, y0p=0.15, z0p=0.15, rplanet=0.1),
-                    # central spot fully occulted by giant planet
-                    3: dict(lat=0, lon=0, rspot=0.1, y0p=0., z0p=0., rplanet=0.2),
-                    
-                    # planet inside noncentral spot
-                    4: dict(lat=30, lon=30, rspot=0.2, y0p=0.45, z0p=0.45, rplanet=0.05),
-                    # planet outside noncentral spot
-                    5: dict(lat=30, lon=30, rspot=0.2, y0p=0., z0p=0., rplanet=0.05),
-                    # part of planet occulting part of noncentral spot
-                    6: dict(lat=30, lon=30, rspot=0.2, y0p=0.38, z0p=0.38, rplanet=0.1),
-                    # noncentral spot fully occulted by giant planet
-                    7: dict(lat=30, lon=30, rspot=0.1, y0p=0.45, z0p=0.45, rplanet=0.2),
-                    }
+        fixtures = {  # planet inside central spot
+            0: dict(lat=0, lon=0, rspot=0.2, y0p=0., z0p=0., rplanet=0.05),
+            # planet outside central spot
+            1: dict(lat=0, lon=0, rspot=0.2, y0p=0.45, z0p=0.45, rplanet=0.05),
+            # part of planet occulting part of centred spot
+            2: dict(lat=0, lon=0, rspot=0.2, y0p=0.15, z0p=0.15, rplanet=0.1),
+            # central spot fully occulted by giant planet
+            3: dict(lat=0, lon=0, rspot=0.1, y0p=0., z0p=0., rplanet=0.2),
+
+            # planet inside noncentral spot
+            4: dict(lat=30, lon=30, rspot=0.2, y0p=0.45, z0p=0.45, rplanet=0.05),
+            # planet outside noncentral spot
+            5: dict(lat=30, lon=30, rspot=0.2, y0p=0., z0p=0., rplanet=0.05),
+            # part of planet occulting part of noncentral spot
+            6: dict(lat=30, lon=30, rspot=0.2, y0p=0.38, z0p=0.38, rplanet=0.1),
+            # noncentral spot fully occulted by giant planet
+            7: dict(lat=30, lon=30, rspot=0.1, y0p=0.45, z0p=0.45, rplanet=0.2),
+        }
 
         for k, kwargs in fixtures.items():
             logging.info(f"\n fixture {k}")
-            mask, fraction_unocculted = smodel._compute_full_spotted_mask(  #fraction "unocculted" is misleading -> as if there was no planet
-                kwargs['lat'], kwargs['lon'], kwargs['rspot'])
-            fraction_spot, fraction_planet, ff_spot, ff_planet = smodel._update_full_mask_with_planet(
-                mask, kwargs['y0p'], kwargs['z0p'], kwargs['rplanet'])
-            ref_fraction_spot, ref_fraction_planet, ref_ff_spot, ref_ff_planet = ref_smodel.lc_mask_with_planet(
-                mask, kwargs['y0p'], kwargs['z0p'], kwargs['rplanet'])
-            
-            fraction_occulted = fraction_unocculted - fraction_spot.squeeze()
-            # ref_fraction_occulted = mask - ref_fraction_spot
 
-            # compatibility --> this does not pass because original model is wrong!
-            # self.assertEqual(ff_spot, ref_ff_spot)
-            # self.assertEqual(ff_planet, ref_ff_planet)
-            # self.assertTrue(np.isclose(
-            #     fraction_spot.squeeze(), ref_fraction_spot).all())
-            # self.assertTrue(np.isclose(
-            #     fraction_planet.squeeze(), ref_fraction_planet).all())
+            model = SpottedStar(lat=kwargs['lat'], lon=kwargs['lon'], rspot=kwargs['rspot'])
+            mask = model.compute_star_mask()
+            rff_spot_noplanet = model.compute_rff()
+            ff_spot_noplanet = model.compute_ff()
+            rff_spot, rff_planet = model.compute_rff(yp=kwargs['y0p'], zp=kwargs['z0p'], rp=kwargs['rplanet'])
+            ff_spot, ff_planet = model.compute_ff(yp=kwargs['y0p'], zp=kwargs['z0p'], rp=kwargs['rplanet'])
             
+            rff_spot_occulted = rff_spot_noplanet - rff_spot.squeeze()
             # basic physics
 
-            self.assertTrue(np.less_equal(fraction_occulted, fraction_unocculted+EPS).all())
-            self.assertTrue(np.less_equal(fraction_occulted, fraction_planet.squeeze()+EPS).all())
-            
+            self.assertTrue(np.less_equal(rff_spot_occulted,
+                            rff_spot_noplanet+EPS).all())
+            self.assertTrue(np.less_equal(rff_spot_occulted,
+                            rff_planet.squeeze()+EPS).all())
+
             # geometric logic
             if k in [0, 4]:
-                self.assertTrue(np.isclose(fraction_occulted, fraction_planet.squeeze()).all())
-            if k in [1, 5]:
-                self.assertTrue(np.isclose(fraction_occulted, 0).all())
-            if k in [3, 7]:
-                self.assertTrue(np.isclose(fraction_occulted, fraction_unocculted).all())
-            if k in [2, 6]:
-                self.assertTrue(np.less_equal(fraction_unocculted, (fraction_spot+fraction_planet).squeeze()+ EPS).all())
-                self.assertTrue(np.less(fraction_unocculted, (fraction_spot+fraction_planet).squeeze()).any())
-                
-            # add tests on ff
+                self.assertTrue(np.isclose(rff_spot_occulted,
+                                rff_planet.squeeze()).all())
+                self.assertTrue((0<ff_planet<ff_spot).all())  # be wary of dimensioality
 
-                
+            if k in [1, 5]:
+                self.assertTrue(np.isclose(rff_spot_occulted, 0).all())
+                self.assertTrue(np.isclose(ff_spot, ff_spot_noplanet).all())  # be wary of dimensioality
+            if k in [3, 7]:
+                self.assertTrue(np.isclose(rff_spot_occulted,
+                                rff_spot_noplanet).all())
+                self.assertTrue((ff_spot<ff_spot_noplanet<ff_planet).all())  # be wary of dimensioality
+            if k in [2, 6]:
+                self.assertTrue(np.less_equal(
+                    rff_spot_noplanet, (rff_spot+rff_planet).squeeze() + EPS).all())
+                self.assertTrue((0<ff_spot<ff_spot_noplanet).all())  # be wary of dimensioality
+
+
 if __name__ == '__main__':
     unittest.main()
