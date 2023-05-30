@@ -46,7 +46,7 @@ class _BaseStar(object):
         self._mask = np.zeros([self.nth, self.nr])
 
     def show(self, yp: Number = None, zp: Number = None, rp: Number = None,
-             ax: Optional[Axes] = None, show_axis: bool = False,
+             ax: Optional[Axes] = None, projection: str = 'polar', show_axis: bool = False,
              cm: Colormap = default_colormap) -> Axes:
         """Display the star with spot(s) and optional transiting planet.
 
@@ -56,6 +56,7 @@ class _BaseStar(object):
             zp (Number, optional): planet z position. Defaults to None.
             rp (NumericOrIterable, optional): planet radius - only one radius supported for now. Defaults to None.
             ax (Optional[Axes], optional): base matplotlib axe to use. Defaults to None.
+            projection (str): matplotlib axe projection to use should a new axis be defined. Defaults to 'polar' 
             show_axis (bool, optional): whether to show the star prime meridian and equator. Defaults to False.
             cm (Colormap, optional): colormap for the star. Defaults to default_colormap.
 
@@ -63,15 +64,32 @@ class _BaseStar(object):
             Axes: matplotlib Axe with the created plot
         """
         if ax is None:
-            _, ax = plt.subplots()
-        plt.pcolormesh(self.Y, self.Z, self._mask,
-                       shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
-        plt.axhline(0, color='black', label='equator',
-                    linestyle='dashed', linewidth=0.5)
-        plt.axvline(0, color='black', label='meridian',
-                    linestyle='dashed', linewidth=0.5)
-        ax.add_patch(plt.Circle((0, 0), 1, edgecolor='black',
-                     facecolor='none', linewidth=0.4))
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection=projection)
+
+        if ax.name == 'polar':
+            ax.pcolormesh(self.TT, self.RR, self._mask,
+                          shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
+            ax.vlines([0, np.pi, np.pi/2, -np.pi/2], 0, 1.2,
+                      color='black', linestyle='dashed', linewidth=0.5)
+            # ax.hlines(1, -np.pi, np.pi)
+            ax.add_patch(plt.Circle((0, 0), 1, edgecolor='black',
+                                    facecolor='none', linewidth=0.4, transform=ax.transData._b))
+
+        elif ax.name == 'rectilinear':
+            ax.pcolormesh(self.Y, self.Z, self._mask,
+                          shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
+            ax.hlines(0, -1.2, 1.2, color='black', label='equator',
+                        linestyle='dashed', linewidth=0.5)
+            ax.vlines(0, -1.2, 1.2, color='black', label='meridian',
+                        linestyle='dashed', linewidth=0.5)
+
+            ax.add_patch(plt.Circle((0, 0), 1, edgecolor='black',
+                                    facecolor='none', linewidth=0.4))
+            plt.axis('equal')
+
+        else:
+            raise NotImplementedError
 
         # Show planet path if yp is provided
         if yp is not None:
@@ -88,12 +106,18 @@ class _BaseStar(object):
                 assert len(yp) == len(zp)
                 list_alpha = np.linspace(0.5, 1, len(yp))
             for i in range(len(zp)):
-                ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
-                                        facecolor='black', alpha=list_alpha[i]))
-        plt.axis('equal')
+                if ax.name == 'polar':
+                    ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
+                                            facecolor='black', alpha=list_alpha[i], transform=ax.transData._b))
+                elif ax.name == 'rectilinear':
+                    ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
+                                            facecolor='black', alpha=list_alpha[i]))
+                else:
+                    raise NotImplementedError
+
         if not show_axis:
             plt.axis('off')
         else:
             plt.xlabel('Y')
-            plt.ylabel('Z', rotation=0)
+            plt.ylabel('Z')
         return ax
