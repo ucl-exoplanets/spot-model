@@ -77,6 +77,11 @@ class TestSpottedStar(unittest.TestCase):
 
         self.assertTrue(np.isclose(rff, ref_rff).all())
         self.assertTrue(np.isclose(model.mask, ref_mask).all())
+        
+        # symmetry wrt X axis
+        model1 = SpottedStar(lat=-0.05, lon=20, rspot=0.15)
+        model2 = SpottedStar(lat=0.05, lon=20, rspot=0.15)
+        self.assertTrue(np.isclose(model1.ff, model2.ff))
 
     def test_wrong_spot(self):
         for rspot in [-0.5, 1.5]:

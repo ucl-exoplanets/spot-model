@@ -181,21 +181,20 @@ class SpottedStar(_BaseStar):
         r_min = r0 - rfeatmax
         r_max = r0 + rfeatmax
 
-        theta0 = np.arctan2(z, y)
-        theta0 = theta0 % (2. * np.pi)
-        d_theta = np.sqrt(2.) * rfeatmax / (r0+1e-32)
-        theta_min = theta0 - d_theta
-        theta_max = theta0 + d_theta
-
         indr = np.where((self.radii >= r_min) & (self.radii <= r_max))[0]
         if r0 <= rfeatmax:
             indth = np.arange(self.nth, dtype=int)
         else:
-            if theta_min >= 0.:
+            theta0 = np.arctan2(z, y)
+            theta0 = theta0 % (2. * np.pi)
+            d_theta = np.sqrt(2.) * rfeatmax / (r0+1e-32)
+            theta_min = (theta0 - d_theta)  % (2. * np.pi)
+            theta_max = (theta0 + d_theta) % (2. * np.pi)
+
+            if theta_min <= theta_max:
                 indth = np.where((self.theta >= theta_min)
                                  & (self.theta <= theta_max))[0]
             else:
-                theta_min += 2. * np.pi
                 indth = np.append(np.where(self.theta <= theta_max)[0],
                                   np.where(self.theta >= theta_min)[0])
         dd = np.sqrt(((self.X[np.ix_(indth, indr)] - x)**2. if x else 0) +
