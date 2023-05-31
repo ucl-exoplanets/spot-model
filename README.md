@@ -1,6 +1,6 @@
 # spot-model
 
-Star model for spot and transit computation. 
+Simple star model for spot and transit computation. 
 
 This code solely focuses on the geometric distribution of spot(s) and planet(s) on the disk, and thus doesn't include any spectral or limb-darkening model.
 
@@ -30,3 +30,5 @@ See [quick_start.ipynb](https://github.com/ucl-exoplanets/spot-model/blob/main/q
 This work stems from the [Ariel](https://arielmission.space/) stellar activity working group, and builds on the spot model originally developed in Cracchiolo et al. ([2021a](https://arxiv.org/abs/2108.12526), [2021b](https://arxiv.org/abs/2108.12526)).
 
 Any question? Please get in touch (mario.morvan@ucl.ac.uk), [raise an issue](https://github.com/ucl-exoplanets/spot-model/issues) or [create a PR](https://github.com/ucl-exoplanets/spot-model/pulls).
+
+This code is licensed under GPL3, see LICENSE.md for the full license file.
