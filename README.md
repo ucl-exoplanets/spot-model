@@ -12,20 +12,21 @@ Basic use:
 ```python
 from spot_model import SpottedStar
 
-# define star model
+# define a star with two spots
 model = SpottedStar(lat=[30, -13], lon=[-45,20],rspot=[0.1, 0.2])
 
-# display star
+# display it
 model.show()
 
-# gets filling factor
+# access the filling factor
 print('filling factor:', model.ff)
 
-# add planet and compute radial filling factors
+# add a planet and compute the observed radial filling factors
 model.compute_rff(yp=0., zp=0., rp=0.1)
 ```
-Some more examples in [quick_start.ipynb](https://github.com/ucl-exoplanets/spot-model/blob/main/quick_start.ipynb).
 
-This work stems from Ariel stellar activity working group, building on the model originally developed in Palermo's group.
+See [quick_start.ipynb](https://github.com/ucl-exoplanets/spot-model/blob/main/quick_start.ipynb) for a more detailed walkthrough.
 
-Any question please get in touch (mario.morvan@ucl.ac.uk), [raise an issue](https://github.com/ucl-exoplanets/spot-model/issues) or [create a PR](https://github.com/ucl-exoplanets/spot-model/pulls). 
+This work stems from the [Ariel](https://arielmission.space/) stellar activity working group, and builds on the spot model originally developed in Cracchiolo et al. ([2021a](https://arxiv.org/abs/2108.12526), [2021b](https://arxiv.org/abs/2108.12526)).
+
+Any question? Please get in touch (mario.morvan@ucl.ac.uk), [raise an issue](https://github.com/ucl-exoplanets/spot-model/issues) or [create a PR](https://github.com/ucl-exoplanets/spot-model/pulls).
