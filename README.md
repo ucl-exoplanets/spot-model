@@ -34,6 +34,6 @@ See [quick_start.ipynb](https://github.com/ucl-exoplanets/spot-model/blob/main/q
 
 This work stems from the [Ariel](https://arielmission.space/) stellar activity working group, and builds on the spot model originally developed in Cracchiolo et al. ([2021a](https://arxiv.org/abs/2108.12526), [2021b](https://arxiv.org/abs/2108.12526)).
 
-Any question? Please get in touch (mario.morvan@ucl.ac.uk), [raise an issue](https://github.com/ucl-exoplanets/spot-model/issues) or [create a PR](https://github.com/ucl-exoplanets/spot-model/pulls).
+Any question, issue or suggestion? Please [raise an issue](https://github.com/ucl-exoplanets/spot-model/issues), [create a PR](https://github.com/ucl-exoplanets/spot-model/pulls) or [get in touch](mario.morvan@ucl.ac.uk).
 
 Spot-Model is licensed under GPL3, see LICENSE.md for the full license file.
