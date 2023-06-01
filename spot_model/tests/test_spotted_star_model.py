@@ -1,5 +1,7 @@
 import unittest
 import logging
+from numbers import Number
+
 
 import numpy as np
 
@@ -77,7 +79,7 @@ class TestSpottedStar(unittest.TestCase):
 
         self.assertTrue(np.isclose(rff, ref_rff).all())
         self.assertTrue(np.isclose(model.mask, ref_mask).all())
-        
+
         # symmetry wrt X axis
         model1 = SpottedStar(lat=-0.05, lon=20, rspot=0.15)
         model2 = SpottedStar(lat=0.05, lon=20, rspot=0.15)
@@ -169,8 +171,14 @@ class TestSpottedStar(unittest.TestCase):
                 yp=kwargs['y0p'], zp=kwargs['z0p'], rp=kwargs['rplanet'])
 
             rff_spot_occulted = rff_spot_noplanet - rff_spot.squeeze()
+            
+            # shapes
+            self.assertEqual(rff_spot.shape, (model.nr, ))
+            self.assertEqual(rff_planet.shape, (model.nr, ))
+            self.assertTrue(isinstance(ff_spot, Number))
+            self.assertTrue(isinstance(ff_planet, Number))
+            
             # basic physics
-
             self.assertTrue(np.less_equal(rff_spot_occulted,
                             rff_spot_noplanet+EPS).all())
             self.assertTrue(np.less_equal(rff_spot_occulted,
@@ -198,6 +206,14 @@ class TestSpottedStar(unittest.TestCase):
                 # be wary of dimensioality
                 self.assertTrue((0 < ff_spot < ff_spot_noplanet).all())
 
+    def test_polychrome_planet(self):
+        model = SpottedStar()
+        spot_rff, planet_rff = model.compute_rff(0, 0, [0.1, 0.1])
+        spot_ff, planet_ff = model.compute_ff(0, 0, [0.1, 0.1])
+        self.assertEqual(spot_rff.shape, (model.nr, 2))
+        self.assertEqual(planet_rff.shape, (model.nr, 2))
+        self.assertEqual(spot_ff.shape, (2,))
+        self.assertEqual(planet_ff.shape, (2,))
 
 if __name__ == '__main__':
     unittest.main()

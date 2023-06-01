@@ -142,10 +142,14 @@ class SpottedStar(_BaseStar):
 
         if yp is not None and zp is not None and rp is not None:  # occulted situation
             rff_spot, rff_planet = self.compute_rff(yp, zp, rp)
+            if isinstance(rp, Number):
+                stellar_radii = self.radii
+            else:
+                stellar_radii = self.radii[:, None]
             ff_spot = np.sum(rff_spot * 2. * np.pi *
-                             self.radii[:, None]*self.deltar, axis=0) / np.pi
+                             stellar_radii*self.deltar, axis=0) / np.pi
             ff_planet = np.sum(rff_planet * 2. * np.pi *
-                               self.radii[:, None]*self.deltar, axis=0) / np.pi
+                               stellar_radii*self.deltar, axis=0) / np.pi
             return ff_spot, ff_planet
         elif yp is not None or zp is not None or rp is not None:
             raise ValueError(
@@ -237,36 +241,44 @@ class SpottedStar(_BaseStar):
         return mask.astype(int), mask.sum(0) * self.deltath / (2. * np.pi)
 
     def _update_full_mask_with_planet(self, mask, y0p, z0p, rplanet):
-        if isinstance(rplanet, (int, float)):
-            warnings.warn('rplanet expected as array entered as scalar')
-            rplanet = np.array([rplanet])
-        nw = len(rplanet)
+        if isinstance(rplanet, Number):
+            stellar_radii = self.radii
+            is_scalar_rp = True
+            nw = None
+        else:
+            is_scalar_rp = False
+            nw = len(rplanet)
+            stellar_radii = self.radii[:,None]
 
         # planet mask for various radii, and indices of the polar rectangle surrounding the largest radius
         mask_p, indr_p, indtheta_p = self._compute_planet_mask(
             y0p, z0p, rplanet)
 
         # planet integration
-        fraction_planet = np.zeros((len(self.radii), nw))
+        if is_scalar_rp:
+            fraction_planet = np.zeros(len(self.radii))
+        else:
+            fraction_planet = np.zeros((len(self.radii), nw))
         fraction_planet[indr_p] = ((mask_p/2).sum(0)*self.deltath)/(2.*np.pi)
         ff_planet = np.sum(fraction_planet * 2. * np.pi *
-                           self.radii[:, None]*self.deltar, axis=0) / np.pi
+                           stellar_radii*self.deltar, axis=0) / np.pi
 
-        # spot integration
-
+        ## spot integration
         # Full-size spotted mask with (largest) planet disk removed
         mask_nop = mask.copy()
         mask_nop[np.ix_(indtheta_p, indr_p)] = 0  # Assumes spot_value == 1 !!
         # integration along theta
         fraction_spot = (mask_nop.sum(0) * self.deltath)/(2.*np.pi)  # (nr)
-        fraction_spot = fraction_spot[:, None].repeat(nw, axis=1)  # (nr, nw)
+        if not is_scalar_rp:
+            fraction_spot = fraction_spot[:, None].repeat(nw, axis=1)  # (nr, nw)
 
         # spotted mask just on the rectangle containing the largest planet disk
-        mask_rmax = mask[np.ix_(indtheta_p, indr_p)]
-        mask_rmax = mask_rmax[:, :, None].repeat(nw, axis=2).astype(int)
+        mask_rmax = mask[np.ix_(indtheta_p, indr_p)].astype(int)
+        if not is_scalar_rp:
+            mask_rmax = mask_rmax[:, :, None].repeat(nw, axis=2)
         mask_rmax *= (~(mask_p.astype(bool))).astype(int)
         # integration along theta
         fraction_spot[indr_p] += (mask_rmax.sum(0)*self.deltath)/(2.*np.pi)
         ff_spot = np.sum(fraction_spot * 2. * np.pi *
-                         self.radii[:, None] * self.deltar, axis=0) / np.pi
+                         stellar_radii * self.deltar, axis=0) / np.pi
         return fraction_spot, fraction_planet, ff_spot, ff_planet
