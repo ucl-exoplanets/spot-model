@@ -192,7 +192,7 @@ class SpottedStar(_BaseStar):
             theta0 = np.arctan2(z, y)
             theta0 = theta0 % (2. * np.pi)
             d_theta = np.sqrt(2.) * rfeatmax / (r0+1e-32)
-            theta_min = (theta0 - d_theta)  % (2. * np.pi)
+            theta_min = (theta0 - d_theta) % (2. * np.pi)
             theta_max = (theta0 + d_theta) % (2. * np.pi)
 
             if theta_min <= theta_max:
@@ -248,7 +248,7 @@ class SpottedStar(_BaseStar):
         else:
             is_scalar_rp = False
             nw = len(rplanet)
-            stellar_radii = self.radii[:,None]
+            stellar_radii = self.radii[:, None]
 
         # planet mask for various radii, and indices of the polar rectangle surrounding the largest radius
         mask_p, indr_p, indtheta_p = self._compute_planet_mask(
@@ -263,14 +263,15 @@ class SpottedStar(_BaseStar):
         ff_planet = np.sum(fraction_planet * 2. * np.pi *
                            stellar_radii*self.deltar, axis=0) / np.pi
 
-        ## spot integration
+        # spot integration
         # Full-size spotted mask with (largest) planet disk removed
         mask_nop = mask.copy()
         mask_nop[np.ix_(indtheta_p, indr_p)] = 0  # Assumes spot_value == 1 !!
         # integration along theta
         fraction_spot = (mask_nop.sum(0) * self.deltath)/(2.*np.pi)  # (nr)
         if not is_scalar_rp:
-            fraction_spot = fraction_spot[:, None].repeat(nw, axis=1)  # (nr, nw)
+            fraction_spot = fraction_spot[:, None].repeat(
+                nw, axis=1)  # (nr, nw)
 
         # spotted mask just on the rectangle containing the largest planet disk
         mask_rmax = mask[np.ix_(indtheta_p, indr_p)].astype(int)
@@ -282,3 +283,108 @@ class SpottedStar(_BaseStar):
         ff_spot = np.sum(fraction_spot * 2. * np.pi *
                          stellar_radii * self.deltar, axis=0) / np.pi
         return fraction_spot, fraction_planet, ff_spot, ff_planet
+
+
+class SpottedStar1D:
+    """Base class for 1D star model parameterised along radial coordinates."""
+    star_value = 0
+    spot_value = 1
+
+    def __init__(self, nr: int = 1000,
+                 dspot: NumericOrIterable = None,
+                 rspot: NumericOrIterable = None):
+
+        assert isinstance(nr, int)
+        assert nr > 0
+        self.nr = nr
+        self.radii = (0.5 + np.arange(self.nr)) / self.nr
+        self.mu = np.sqrt(1. - self.radii**2)
+
+        self.deltar = 1. / self.nr
+
+        self.spots = {'d': [],
+                      'r': []}
+
+        self.add_spot(dspot, rspot)
+
+    @property
+    def rff(self) -> ndarray:
+        """Get the (effective) radial spot filling factor of the star.
+
+        Without any occulting planet.
+        Returns:
+            ndarray: array of dim (nr) ith the spot radial filling factor
+        """
+        return self.compute_rff()
+
+    @property
+    def ff(self) -> Number:
+        """Get the (effective) spot filling factor of the star.
+
+        Without any occulting planet.
+        Returns:
+            ndarray: Computed spot filling factor
+        """
+        return self.compute_ff()
+
+    def add_spot(self, d: NumericOrIterable, r: NumericOrIterable):
+        """Add one or several spots to the 1D star object.
+
+        Args:
+            d (NumericOrIterable, optional): Distance to the centre
+                Defaults to None. If defined, must be of same dimension as lon and rspot.
+            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+                Defaults to None. If defined, must be of same dimension as lat and lon.
+        """
+        if d is not None and r is not None:
+            d, r = parse_args_lists(d, r)
+            if not (np.greater_equal(d, 0).all() and np.less_equal(d, 1).all()):
+                raise ValueError('d is defined between 0 and 1')
+            if not (np.greater_equal(r, 0).all() and np.less_equal(r, 1).all()):
+                raise ValueError('rspot should be between 0 and 1')
+            if np.isclose(r, 0).any():
+                warnings.warn('spot radius is close to zero')
+            self.spots['d'] += d
+            self.spots['r'] += r
+
+            # self._update_mask()
+
+    def compute_rff(self) -> Union[ndarray, Tuple[ndarray, ndarray]]:
+        """Compute the "effective radial filling factor" of the star. 
+        Assumes non overlapping and non occulted circular spots with elliptical projections.
+
+        Returns:
+            Union[ndarray, Tuple[ndarray, ndarray]]: Either spot radial filling factor (of dimension (nr,))
+                or tuple with observed spot and planet radial filling factors (each of dimension (nr, nw)), 
+                where nw is the number of planet radii or wavelengths.
+        """
+
+        rff = np.zeros(self.nr)
+        for d, r in zip(self.spots['d'], self.spots['r']):
+            beta = r * np.sqrt(1-d**2)  # semi-minor axis of spot ellipse
+            z = ...  # negative one
+            y = ...  # ...
+
+            if d >= beta:
+                ...
+            else:
+                ...
+
+            rff += 0
+
+        if (rff > 1).any():
+            assert RuntimeError(
+                "Radial filling factor can not excede 1, please review the spot parameters")
+        return rff
+
+    def compute_ff(self) -> Number:
+        """Compute the (effective) filling factor of the star.
+
+        Returns:
+            Number: Effective spot filling factor (between 0 and 1)
+        """
+        rff = self.compute_rff()
+        ff = np.sum(rff * 2. * np.pi *
+                    self.radii*self.deltar, axis=0) / np.pi
+        assert 0. <= ff <= 1.
+        return ff
