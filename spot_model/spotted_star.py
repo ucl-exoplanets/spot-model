@@ -360,17 +360,27 @@ class SpottedStar1D:
         """
 
         rff = np.zeros(self.nr)
-        for d, r in zip(self.spots['d'], self.spots['r']):
-            beta = r * np.sqrt(1-d**2)  # semi-minor axis of spot ellipse
-            z = ...  # negative one
-            y = ...  # ...
-
-            if d >= beta:
-                ...
+        for dspot, rspot in zip(self.spots['d'], self.spots['r']):
+            if dspot == 0:
+                rff[self.radii <= rspot] += 1
             else:
-                ...
-
-            rff += 0
+                mu_spot = np.sqrt(1-dspot**2)  # mu for the spot centre
+                beta = rspot * mu_spot  # semi-minor axis of spot ellipse
+                z_minus = (1 - mu_spot * np.sqrt(mu_spot**2 + rspot**2)) / dspot
+                y_plus = np.sqrt((-mu_spot**2 - self.mu**2 - rspot**2 * mu_spot**2 + 2*mu_spot*np.sqrt(self.mu**2+rspot**2)) / dspot**2)
+                if dspot >= beta:
+                    spotted = np.abs(self.radii - dspot) <= beta
+                    rff[spotted] += np.arctan(y_plus / z_minus)[spotted] / np.pi
+                else:
+                    case1 = self.radii <=  beta - dspot
+                    case2 = (np.abs(self.radii - beta) < dspot) & (z_minus>0)
+                    case3 = (z_minus == 0)
+                    case4 = (np.abs(self.radii - beta) < dspot) & (z_minus<0)
+                    #case5 = self.radii >=  beta + dspot  ---> nothing to add in this case
+                    rff[case1] += 1
+                    rff[case2] += np.arctan(y_plus / z_minus)[case2] / np.pi
+                    rff[case3] += 1 / 2
+                    rff[case4] += 1 + np.arctan(y_plus / z_minus)[case4] / np.pi
 
         if (rff > 1).any():
             assert RuntimeError(
