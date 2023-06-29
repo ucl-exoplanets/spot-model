@@ -6,7 +6,7 @@ from numbers import Number
 import numpy as np
 
 from spot_model._base_star import _BaseStar
-from spot_model.spotted_star import SpottedStar
+from spot_model.spotted_star import SpottedStar, SpottedStar1D
 from spot_model.tests.original_model import OriginalStarModel
 
 
@@ -214,6 +214,79 @@ class TestSpottedStar(unittest.TestCase):
         self.assertEqual(planet_rff.shape, (model.nr, 2))
         self.assertEqual(spot_ff.shape, (2,))
         self.assertEqual(planet_ff.shape, (2,))
+
+
+class TestSpottedStar1D(unittest.TestCase):
+    def test_nospot(self):
+        # spots with zero radius
+        for dspot, rspot in [(None, None),  # no spot
+                             (0, 0),  # zero radius - central
+                             (0.5, 0)  # zero radius - noncentral
+                             ]:
+            model = SpottedStar1D(dspot=dspot, rspot=rspot)
+            rff = model.compute_rff()
+            self.assertTrue(np.isclose(rff, 0).all())
+            ff = model.compute_ff()
+            self.assertTrue(np.isclose(ff, 0).all())
+
+    def test_full_spot(self):
+        # Full spot
+        model = SpottedStar1D(dspot=0, rspot=1)
+        rff = model.compute_rff()
+        self.assertTrue(np.isclose(rff, 1).all())
+        ff = model.compute_ff()
+        self.assertTrue(np.isclose(ff, 1).all())
+
+    def test_one_spot(self):
+        model = SpottedStar1D(dspot=0, rspot=0.2)
+        rff = model.compute_rff()
+        ff = model.compute_ff()
+
+        model2 = SpottedStar1D(dspot=0.5, rspot=0.2)
+        rff2 = model2.compute_rff()
+        ff2 = model2.compute_ff()
+
+        self.assertTrue(np.greater_equal(rff, 0).all()
+                        and np.less_equal(rff, 1).all())
+        self.assertTrue(np.greater_equal(rff2, 0).all()
+                        and np.less_equal(rff2, 1).all())
+        self.assertTrue(0 < ff2 < ff < 1)
+
+        # compatibility with 2D model 
+        # (centre spot)
+        ref_model = SpottedStar(lat=0, lon=0, rspot=0.2)
+        self.assertTrue(np.isclose(rff, ref_model.rff).all())
+        self.assertTrue(np.isclose(ff, ref_model.ff).all())
+
+        # non central spot - discrepancy to investigate (see issue #31)
+        ref_model2 = SpottedStar(lat=30, lon=0, rspot=0.2, nth=10000)
+        self.assertTrue(np.isclose(rff2, ref_model2.rff).all())
+        self.assertTrue(np.isclose(ff2, ref_model2.ff).all())
+        
+    def test_wrong_spot(self):
+        for rspot in [-0.5, 1.5]:
+            model = SpottedStar1D()
+            self.assertRaises(ValueError, lambda: model.add_spot(0.1, rspot))
+
+        for dspot in [-0.2, 1.1]:
+            model = SpottedStar1D()
+            self.assertRaises(ValueError, lambda: model.add_spot(dspot, 0.1))
+
+    def test_multiple_spots(self):
+        # non overlapping
+        model = SpottedStar1D(dspot=[0, 0.5], rspot=[0.1, 0.1])
+        rff = model.compute_rff()
+        ff = model.compute_ff()
+        model1 = SpottedStar1D(dspot=0, rspot=0.1)
+        rff1 = model1.compute_rff()
+        ff1 = model1.compute_ff()
+        model2 = SpottedStar1D(dspot=0.5, rspot=0.1)
+        rff2 = model2.compute_rff()
+        ff2 = model2.compute_ff()
+
+        # ok cause disjoint in radius too
+        self.assertTrue(np.isclose(rff, rff1+rff2).all())
+        self.assertTrue(np.isclose(ff, ff1+ff2).all())
 
 if __name__ == '__main__':
     unittest.main()

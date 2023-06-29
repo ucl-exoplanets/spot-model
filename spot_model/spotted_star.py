@@ -366,7 +366,7 @@ class SpottedStar1D:
             else:
                 mu_spot = np.sqrt(1-dspot**2)  # mu for the spot centre
                 beta = rspot * mu_spot  # semi-minor axis of spot ellipse
-                z_minus = (1 - mu_spot * np.sqrt(mu_spot**2 + rspot**2)) / dspot
+                z_minus = (1 - mu_spot * np.sqrt(self.mu**2 + rspot**2)) / dspot
                 y_plus = np.sqrt((-mu_spot**2 - self.mu**2 - rspot**2 * mu_spot**2 + 2*mu_spot*np.sqrt(self.mu**2+rspot**2)) / dspot**2)
                 if dspot >= beta:
                     spotted = np.abs(self.radii - dspot) <= beta
@@ -383,7 +383,7 @@ class SpottedStar1D:
                     rff[case4] += 1 + np.arctan(y_plus / z_minus)[case4] / np.pi
 
         if (rff > 1).any():
-            assert RuntimeError(
+            raise RuntimeError(
                 "Radial filling factor can not excede 1, please review the spot parameters")
         return rff
 
