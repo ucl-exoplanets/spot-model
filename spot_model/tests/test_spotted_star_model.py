@@ -44,6 +44,13 @@ class TestSpottedStar2D(unittest.TestCase):
             self.assertTrue(np.isclose(rff, 0).all())
             ff = model.compute_ff()
             self.assertTrue(np.isclose(ff, 0).all())
+        
+        # removing the spots
+        model.add_spot([0, 30], [0, 25], [0.2, 0.1])
+        model.remove_spots()
+        self.assertTrue(np.isclose(model.ff, 0).all())
+        self.assertTrue(np.isclose(model.rff, 0).all())
+        self.assertTrue(np.isclose(model.mask, 0).all())
 
     def test_full_spot(self):
         # Full spot
@@ -228,6 +235,12 @@ class TestSpottedStar1D(unittest.TestCase):
             self.assertTrue(np.isclose(rff, 0).all())
             ff = model.compute_ff()
             self.assertTrue(np.isclose(ff, 0).all())
+    
+        # removing the spots
+        model.add_spot([0, 0.4], [0.2, 0.1])
+        model.remove_spots()
+        self.assertTrue(np.isclose(model.ff, 0).all())
+        self.assertTrue(np.isclose(model.rff, 0).all())
 
     def test_full_spot(self):
         # Full spot

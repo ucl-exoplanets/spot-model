@@ -46,6 +46,14 @@ class SpottedStar(_BaseStar):
         """Add one or several spots to the star object."""
         raise NotImplementedError
 
+    def remove_spots(self):
+        """Remove all the spots added to the current star"""
+        for k in self.spots:
+            self.spots[k] = []
+
+        if self._mask is not None and self._mask.any():
+            self._mask = np.zeros([self.nth, self.nr])
+            
 
 class SpottedStar2D(SpottedStar):
     """Star model allowing fast 2D disk integration with spot(s) and transiting planet(s)"""
