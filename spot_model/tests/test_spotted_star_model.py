@@ -6,7 +6,7 @@ from numbers import Number
 import numpy as np
 
 from spot_model._base_star import _BaseStar
-from spot_model.spotted_star import SpottedStar, SpottedStar1D
+from spot_model.spotted_star import SpottedStar2D, SpottedStar1D
 from spot_model.tests.original_model import OriginalStarModel
 
 
@@ -30,7 +30,7 @@ class TestBaseStar(unittest.TestCase):
         star_model.show(yp=0, zp=0, rp=0.05)
 
 
-class TestSpottedStar(unittest.TestCase):
+class TestSpottedStar2D(unittest.TestCase):
     def test_nospot(self):
         # spots with zero radius
         for lat, lon, rspot in [(None, None, None),  # no spot
@@ -38,7 +38,7 @@ class TestSpottedStar(unittest.TestCase):
                                 (45, 45, 0),  # zero radius - noncentral
                                 (0, 180, 0.5),  # hidden spot behind
                                 ]:
-            model = SpottedStar(lat=lat, lon=lon, rspot=rspot)
+            model = SpottedStar2D(lat=lat, lon=lon, rspot=rspot)
             self.assertTrue(np.isclose(model.mask, 0).all())
             rff = model.compute_rff()
             self.assertTrue(np.isclose(rff, 0).all())
@@ -47,7 +47,7 @@ class TestSpottedStar(unittest.TestCase):
 
     def test_full_spot(self):
         # Full spot
-        model = SpottedStar(lat=0, lon=0, rspot=1)
+        model = SpottedStar2D(lat=0, lon=0, rspot=1)
         self.assertTrue(np.isclose(model.mask, 1).all())
         rff = model.compute_rff()
         self.assertTrue(np.isclose(rff, 1).all())
@@ -55,11 +55,11 @@ class TestSpottedStar(unittest.TestCase):
         self.assertTrue(np.isclose(ff, 1).all())
 
     def test_one_spot(self):
-        model = SpottedStar(lat=0, lon=0, rspot=0.2)
+        model = SpottedStar2D(lat=0, lon=0, rspot=0.2)
         rff = model.compute_rff()
         ff = model.compute_ff()
 
-        model2 = SpottedStar(lat=45, lon=45, rspot=0.2)
+        model2 = SpottedStar2D(lat=45, lon=45, rspot=0.2)
         rff2 = model2.compute_rff()
         ff2 = model2.compute_ff()
 
@@ -81,28 +81,28 @@ class TestSpottedStar(unittest.TestCase):
         self.assertTrue(np.isclose(model.mask, ref_mask).all())
 
         # symmetry wrt X axis
-        model1 = SpottedStar(lat=-0.05, lon=20, rspot=0.15)
-        model2 = SpottedStar(lat=0.05, lon=20, rspot=0.15)
+        model1 = SpottedStar2D(lat=-0.05, lon=20, rspot=0.15)
+        model2 = SpottedStar2D(lat=0.05, lon=20, rspot=0.15)
         self.assertTrue(np.isclose(model1.ff, model2.ff))
 
     def test_wrong_spot(self):
         for rspot in [-0.5, 1.5]:
-            model = SpottedStar()
+            model = SpottedStar2D()
             self.assertRaises(ValueError, lambda: model.add_spot(0, 0, rspot))
 
         for lat in [-91, 93]:
-            model = SpottedStar()
+            model = SpottedStar2D()
             self.assertRaises(ValueError, lambda: model.add_spot(lat, 0, 0.1))
 
     def test_multiple_spots(self):
         # non overlapping
-        model = SpottedStar(lat=[0, 45], lon=[0, 45], rspot=[0.1, 0.1])
+        model = SpottedStar2D(lat=[0, 45], lon=[0, 45], rspot=[0.1, 0.1])
         rff = model.compute_rff()
         ff = model.compute_ff()
-        model1 = SpottedStar(lat=0, lon=0, rspot=0.1)
+        model1 = SpottedStar2D(lat=0, lon=0, rspot=0.1)
         rff1 = model1.compute_rff()
         ff1 = model1.compute_ff()
-        model2 = SpottedStar(lat=45, lon=45, rspot=0.1)
+        model2 = SpottedStar2D(lat=45, lon=45, rspot=0.1)
         rff2 = model2.compute_rff()
         ff2 = model2.compute_ff()
 
@@ -112,7 +112,7 @@ class TestSpottedStar(unittest.TestCase):
         self.assertTrue(np.isclose(ff, ff1+ff2).all())
 
         # fully overlapping
-        model = SpottedStar(lat=[0, 0], lon=[0, 0], rspot=[0.05, 0.1])
+        model = SpottedStar2D(lat=[0, 0], lon=[0, 0], rspot=[0.05, 0.1])
         rff = model.compute_rff()
         ff = model.compute_ff()
 
@@ -121,13 +121,13 @@ class TestSpottedStar(unittest.TestCase):
         self.assertTrue(np.isclose(ff, ff1).all())
 
         # partially overlapping
-        model = SpottedStar(lat=[-5, 5], lon=[2, 5], rspot=[0.2, 0.2])
+        model = SpottedStar2D(lat=[-5, 5], lon=[2, 5], rspot=[0.2, 0.2])
         rff = model.compute_rff()
         ff = model.compute_ff()
-        model1 = SpottedStar(lat=-5, lon=2, rspot=0.2)
+        model1 = SpottedStar2D(lat=-5, lon=2, rspot=0.2)
         rff1 = model1.compute_rff()
         ff1 = model1.compute_ff()
-        model2 = SpottedStar(lat=5, lon=5, rspot=0.2)
+        model2 = SpottedStar2D(lat=5, lon=5, rspot=0.2)
         rff2 = model2.compute_rff()
         ff2 = model2.compute_ff()
 
@@ -161,7 +161,7 @@ class TestSpottedStar(unittest.TestCase):
         for k, kwargs in fixtures.items():
             logging.info(f"\n fixture {k}")
 
-            model = SpottedStar(
+            model = SpottedStar2D(
                 lat=kwargs['lat'], lon=kwargs['lon'], rspot=kwargs['rspot'])
             rff_spot_noplanet = model.compute_rff()
             ff_spot_noplanet = model.compute_ff()
@@ -207,7 +207,7 @@ class TestSpottedStar(unittest.TestCase):
                 self.assertTrue((0 < ff_spot < ff_spot_noplanet).all())
 
     def test_polychrome_planet(self):
-        model = SpottedStar()
+        model = SpottedStar2D()
         spot_rff, planet_rff = model.compute_rff(0, 0, [0.1, 0.1])
         spot_ff, planet_ff = model.compute_ff(0, 0, [0.1, 0.1])
         self.assertEqual(spot_rff.shape, (model.nr, 2))
@@ -254,12 +254,12 @@ class TestSpottedStar1D(unittest.TestCase):
 
         # compatibility with 2D model 
         # (centre spot)
-        ref_model = SpottedStar(lat=0, lon=0, rspot=0.2)
+        ref_model = SpottedStar2D(lat=0, lon=0, rspot=0.2)
         self.assertTrue(np.isclose(rff, ref_model.rff).all())
         self.assertTrue(np.isclose(ff, ref_model.ff).all())
 
         # non central spot - discrepancy to investigate (see issue #31)
-        ref_model2 = SpottedStar(lat=30, lon=0, rspot=0.2, nth=10000)
+        ref_model2 = SpottedStar2D(lat=30, lon=0, rspot=0.2, nth=10000)
         self.assertTrue(np.isclose(rff2, ref_model2.rff).all())
         self.assertTrue(np.isclose(ff2, ref_model2.ff).all())
         

@@ -2,14 +2,14 @@ import warnings
 import timeit
 
 from spot_model.tests.original_model import OriginalStarModel
-from spot_model.spotted_star import SpottedStar
+from spot_model.spotted_star import SpottedStar2D
 
 
 warnings.filterwarnings('ignore')
 
 
 def run_speed_test(nr=1000, nth=1000, number=50):
-    smodel = SpottedStar(nr=nr, nth=nth)
+    smodel = SpottedStar2D(nr=nr, nth=nth)
     ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
     lat = 0

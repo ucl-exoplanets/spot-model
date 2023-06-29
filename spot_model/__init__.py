@@ -1,1 +1,1 @@
-from .spotted_star import SpottedStar
+from .spotted_star import SpottedStar2D

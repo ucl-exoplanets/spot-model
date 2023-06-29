@@ -12,31 +12,6 @@ NumericOrIterable = Optional[Union[Number, Iterable[Number]]]
 
 
 class SpottedStar(_BaseStar):
-    """Star model allowing fast 2D disk integration with spot(s) and transiting planet(s)"""
-
-    def __init__(self, nr: int = 1000,  nth: int = 1000,
-                 lat: NumericOrIterable = None,
-                 lon: NumericOrIterable = None,
-                 rspot: NumericOrIterable = None):
-        """Create a spotted star object.
-
-        Args:
-            nr (int, optional): number of quantised values along polar radius. Defaults to 1000.
-            nth (int, optional): number of quantised values along theta (polar angle). Defaults to 1000.
-            lat (NumericOrIterable, optional): spot(s) latitude(s) in degrees.
-                Defaults to None. If defined, must be of same dimension as lon and rspot.
-            lon (NumericOrIterable, optional): spot(s) longitude(s) in degrees. 
-                Defaults to None. If defined, must be of same dimension as lat and rspot.
-            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
-                Defaults to None. If defined, must be of same dimension as lat and lon.
-        """
-        super().__init__(nr, nth)
-        self.spots = {'lat': [],
-                      'lon': [],
-                      'r': []}
-
-        self.add_spot(lat, lon, rspot)
-
     @property
     def mask(self) -> ndarray:
         """Access the mask for the spotted star. 
@@ -66,6 +41,40 @@ class SpottedStar(_BaseStar):
             ndarray: Computed spot filling factor
         """
         return self.compute_ff()
+
+    def add_spot(self, *args, **kwargs):
+        """Add one or several spots to the star object."""
+        raise NotImplementedError
+
+
+class SpottedStar2D(SpottedStar):
+    """Star model allowing fast 2D disk integration with spot(s) and transiting planet(s)"""
+    star_value = 0
+    spot_value = 1
+    planet_value = 2
+
+    def __init__(self, nr: int = 1000,  nth: int = 1000,
+                 lat: NumericOrIterable = None,
+                 lon: NumericOrIterable = None,
+                 rspot: NumericOrIterable = None):
+        """Create a spotted star object.
+
+        Args:
+            nr (int, optional): number of quantised values along polar radius. Defaults to 1000.
+            nth (int, optional): number of quantised values along theta (polar angle). Defaults to 1000.
+            lat (NumericOrIterable, optional): spot(s) latitude(s) in degrees.
+                Defaults to None. If defined, must be of same dimension as lon and rspot.
+            lon (NumericOrIterable, optional): spot(s) longitude(s) in degrees. 
+                Defaults to None. If defined, must be of same dimension as lat and rspot.
+            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+                Defaults to None. If defined, must be of same dimension as lat and lon.
+        """
+        super().__init__(nr, nth)
+        self.spots = {'lat': [],
+                      'lon': [],
+                      'r': []}
+
+        self.add_spot(lat, lon, rspot)
 
     def add_spot(self, lat: NumericOrIterable, lon: NumericOrIterable, rspot: NumericOrIterable):
         """Add one or several spots to the star object.
@@ -285,47 +294,18 @@ class SpottedStar(_BaseStar):
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
 
-class SpottedStar1D:
+class SpottedStar1D(SpottedStar):
     """Base class for 1D star model parameterised along radial coordinates."""
-    star_value = 0
-    spot_value = 1
 
     def __init__(self, nr: int = 1000,
                  dspot: NumericOrIterable = None,
                  rspot: NumericOrIterable = None):
 
-        assert isinstance(nr, int)
-        assert nr > 0
-        self.nr = nr
-        self.radii = (0.5 + np.arange(self.nr)) / self.nr
-        self.mu = np.sqrt(1. - self.radii**2)
-
-        self.deltar = 1. / self.nr
+        super().__init__(nr=nr, nth=None)
 
         self.spots = {'d': [],
                       'r': []}
-
         self.add_spot(dspot, rspot)
-
-    @property
-    def rff(self) -> ndarray:
-        """Get the (effective) radial spot filling factor of the star.
-
-        Without any occulting planet.
-        Returns:
-            ndarray: array of dim (nr) ith the spot radial filling factor
-        """
-        return self.compute_rff()
-
-    @property
-    def ff(self) -> Number:
-        """Get the (effective) spot filling factor of the star.
-
-        Without any occulting planet.
-        Returns:
-            ndarray: Computed spot filling factor
-        """
-        return self.compute_ff()
 
     def add_spot(self, d: NumericOrIterable, r: NumericOrIterable):
         """Add one or several spots to the 1D star object.

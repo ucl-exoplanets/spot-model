@@ -6,6 +6,9 @@ from spot_model._base_star import _BaseStar
 class OriginalStarModel(_BaseStar):
     """original spotted star model code wrapped into a class"""
 
+    def __init__(self, nr: int = 1000,  nth: int = 1000):
+        super().__init__(nr, nth)
+
     def spot_lc(self, lat, lon, rfeature):
         # lat / lon in radians
         x0 = np.sin(lat) * np.cos(lon)
