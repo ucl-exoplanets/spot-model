@@ -53,7 +53,7 @@ class SpottedStar(_BaseStar):
 
         if self._mask is not None and self._mask.any():
             self._mask = np.zeros([self.nth, self.nr])
-            
+
 
 class SpottedStar2D(SpottedStar):
     """Star model allowing fast 2D disk integration with spot(s) and transiting planet(s)"""
@@ -315,25 +315,27 @@ class SpottedStar1D(SpottedStar):
                       'r': []}
         self.add_spot(dspot, rspot)
 
-    def add_spot(self, d: NumericOrIterable, r: NumericOrIterable):
+    def add_spot(self, 
+                 dspot: NumericOrIterable, 
+                 rspot: NumericOrIterable):
         """Add one or several spots to the 1D star object.
 
         Args:
-            d (NumericOrIterable, optional): Distance to the centre
+            dspot (NumericOrIterable, optional): Distance to the centre
                 Defaults to None. If defined, must be of same dimension as lon and rspot.
             rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
-        if d is not None and r is not None:
-            d, r = parse_args_lists(d, r)
-            if not (np.greater_equal(d, 0).all() and np.less_equal(d, 1).all()):
+        if dspot is not None and rspot is not None:
+            dspot, rspot = parse_args_lists(dspot, rspot)
+            if not (np.greater_equal(dspot, 0).all() and np.less_equal(dspot, 1).all()):
                 raise ValueError('d is defined between 0 and 1')
-            if not (np.greater_equal(r, 0).all() and np.less_equal(r, 1).all()):
+            if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
                 raise ValueError('rspot should be between 0 and 1')
-            if np.isclose(r, 0).any():
+            if np.isclose(rspot, 0).any():
                 warnings.warn('spot radius is close to zero')
-            self.spots['d'] += d
-            self.spots['r'] += r
+            self.spots['d'] += dspot
+            self.spots['r'] += rspot
 
             # self._update_mask()
 
