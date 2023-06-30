@@ -64,7 +64,8 @@ class SpottedStar2D(SpottedStar):
     def __init__(self, nr: int = 1000,  nth: int = 1000,
                  lat: NumericOrIterable = None,
                  lon: NumericOrIterable = None,
-                 rspot: NumericOrIterable = None):
+                 rspot: NumericOrIterable = None,
+                 debug: bool = True):
         """Create a spotted star object.
 
         Args:
@@ -77,7 +78,7 @@ class SpottedStar2D(SpottedStar):
             rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
-        super().__init__(nr, nth)
+        super().__init__(nr, nth, debug)
         self.spots = {'lat': [],
                       'lon': [],
                       'r': []}
@@ -96,15 +97,16 @@ class SpottedStar2D(SpottedStar):
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
         if lat is not None and lon is not None and rspot is not None:
-            lat, lon, rspot = parse_args_lists(lat, lon, rspot)
-            if not (np.greater_equal(lat, -90).all() and np.less_equal(lat, 90).all()):
-                raise ValueError('latitude is defined between -90 and 90°')
-            if not (np.greater_equal(lat, -180).all() and np.less_equal(lon, 180).all()):
-                warnings('longitude is here defined between -180 and 180°')
-            if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
-                raise ValueError('rspot should be between 0 and 1')
-            if np.isclose(rspot, 0).any():
-                warnings.warn('spot radius is close to zero')
+            lat, lon, rspot = parse_args_lists(lat, lon, rspot, same_length=self.debug)
+            if self.debug:
+                if not (np.greater_equal(lat, -90).all() and np.less_equal(lat, 90).all()):
+                    raise ValueError('latitude is defined between -90 and 90°')
+                if not (np.greater_equal(lat, -180).all() and np.less_equal(lon, 180).all()):
+                    warnings('longitude is here defined between -180 and 180°')
+                if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
+                    raise ValueError('rspot should be between 0 and 1')
+                if np.isclose(rspot, 0).any():
+                    warnings.warn('spot radius is close to zero')
             self.spots['lat'] += lat
             self.spots['lon'] += lon
             self.spots['r'] += rspot
@@ -245,12 +247,6 @@ class SpottedStar2D(SpottedStar):
 
     def _compute_full_spotted_mask(self, lat, lon, rspot):
         mask = np.zeros([self.nth, self.nr], bool)
-        if not hasattr(lat, '__len__'):
-            lat = [lat]
-        if not hasattr(lon, '__len__'):
-            lon = [lon]
-        if not hasattr(rspot, '__len__'):
-            rspot = [rspot]
         for i in range(len(lat)):
             mask1, indr, indtheta = self._compute_spot_mask(
                 lat[i], lon[i], rspot[i])
@@ -307,9 +303,10 @@ class SpottedStar1D(SpottedStar):
 
     def __init__(self, nr: int = 1000,
                  dspot: NumericOrIterable = None,
-                 rspot: NumericOrIterable = None):
+                 rspot: NumericOrIterable = None,
+                 debug: bool = True):
 
-        super().__init__(nr=nr, nth=None)
+        super().__init__(nr=nr, nth=None, debug=debug)
 
         self.spots = {'d': [],
                       'r': []}
@@ -327,17 +324,21 @@ class SpottedStar1D(SpottedStar):
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
         if dspot is not None and rspot is not None:
-            dspot, rspot = parse_args_lists(dspot, rspot)
-            if not (np.greater_equal(dspot, 0).all() and np.less_equal(dspot, 1).all()):
-                raise ValueError('d is defined between 0 and 1')
-            if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
-                raise ValueError('rspot should be between 0 and 1')
-            if np.isclose(rspot, 0).any():
-                warnings.warn('spot radius is close to zero')
+            dspot, rspot = parse_args_lists(dspot, rspot, same_length=self.debug)
+            if self.debug:
+                if not (np.greater_equal(dspot, 0).all() and np.less_equal(dspot, 1).all()):
+                    raise ValueError('d is defined between 0 and 1')
+                if not (np.greater_equal(rspot, 0).all() and np.less_equal(rspot, 1).all()):
+                    raise ValueError('rspot should be between 0 and 1')
+                if np.isclose(rspot, 0).any():
+                    warnings.warn('spot radius is close to zero')
             self.spots['d'] += dspot
             self.spots['r'] += rspot
 
-            # self._update_mask()
+            if self.debug and len(self.spots['d']) > 1:
+                d_s, r_s = map(list, zip(*sorted(zip(self.spots['d'], self.spots['r']))))
+                if (np.array(r_s[:-1]) + np.array(r_s[1:]) > np.diff(d_s)).any():
+                    warnings.warn("""Possible overlap between spots in terms of distance, though the 1D model assumes non-overlapping distances""")
 
     def compute_rff(self) -> Union[ndarray, Tuple[ndarray, ndarray]]:
         """Compute the "effective radial filling factor" of the star. 
@@ -372,7 +373,7 @@ class SpottedStar1D(SpottedStar):
                     rff[case3] += 1 / 2
                     rff[case4] += 1 + np.arctan(y_plus / z_minus)[case4] / np.pi
 
-        if (rff > 1).any():
+        if self.debug and (rff > 1).any():
             raise RuntimeError(
                 "Radial filling factor can not excede 1, please review the spot parameters")
         return rff
@@ -386,5 +387,6 @@ class SpottedStar1D(SpottedStar):
         rff = self.compute_rff()
         ff = np.sum(rff * 2. * np.pi *
                     self.radii*self.deltar, axis=0) / np.pi
-        assert 0. <= ff <= 1.
+        if self.debug and not (0. <= ff <= 1.):
+            raise RuntimeError('Filling factor cannot excede 1, please review spot parameters')
         return ff

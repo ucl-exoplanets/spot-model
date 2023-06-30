@@ -20,14 +20,13 @@ class _BaseStar(object):
     spot_value = 1
     planet_value = 2
 
-    def __init__(self, nr: int = 1000,  nth: Optional[int] = None):
-        assert isinstance(nr, int)
-        assert nr > 0
-        
+    def __init__(self, nr: int = 1000,  nth: Optional[int] = None, debug: bool = True):
+        assert isinstance(nr, int) and nr > 0
         self.nr = nr
         self.radii = (0.5 + np.arange(self.nr)) / self.nr
         self.mu = np.sqrt(1. - self.radii**2)
         self.deltar = 1. / self.nr
+        self.debug = debug
 
         if nth is not None:
             assert isinstance(nth, int)
