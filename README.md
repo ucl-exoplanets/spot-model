@@ -13,10 +13,10 @@ Furthermore, this model assumes that stars and planets are spherical and spots a
 ## *Basic use*
 
 ```python
-from spot_model import SpottedStar
+from spot_model import SpottedStar2D
 
 # define a star with two spots
-model = SpottedStar(lat=[30, -13], lon=[-45,20],rspot=[0.1, 0.2])
+model = SpottedStar2D(lat=[30, -13], lon=[-45,20],rspot=[0.1, 0.2])
 
 # display it
 model.show()
@@ -26,6 +26,7 @@ print('filling factor:', model.ff)
 
 # add a planet and compute the observed radial filling factors
 model.compute_rff(yp=0., zp=0., rp=0.1)
+
 ```
 
 See [quick_start.ipynb](https://github.com/ucl-exoplanets/spot-model/blob/main/quick_start.ipynb) for a more detailed walkthrough.
