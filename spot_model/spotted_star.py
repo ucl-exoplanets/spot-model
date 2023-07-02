@@ -358,7 +358,9 @@ class SpottedStar1D(SpottedStar):
                 mu_spot = np.sqrt(1-dspot**2)  # mu for the spot centre
                 beta = rspot * mu_spot  # semi-minor axis of spot ellipse
                 z_minus = (1 - mu_spot * np.sqrt(self.mu**2 + rspot**2)) / dspot
-                y_plus = np.sqrt((-mu_spot**2 - self.mu**2 - rspot**2 * mu_spot**2 + 2*mu_spot*np.sqrt(self.mu**2+rspot**2)) / dspot**2)
+                temp = (-mu_spot**2 - self.mu**2 - rspot**2 * mu_spot**2 + 2*mu_spot*np.sqrt(self.mu**2+rspot**2))
+                temp[temp<0] = np.nan
+                y_plus = np.sqrt(temp) / dspot
                 if dspot >= beta:
                     spotted = np.abs(self.radii - dspot) <= beta
                     rff[spotted] += np.arctan(y_plus / z_minus)[spotted] / np.pi
