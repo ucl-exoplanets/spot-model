@@ -20,30 +20,32 @@ class _BaseStar(object):
     spot_value = 1
     planet_value = 2
 
-    def __init__(self, nr: int = 1000,  nth: int = 1000):
-        assert isinstance(nr, int)
-        assert nr > 0
-        assert isinstance(nth, int)
-        assert nth > 0
+    def __init__(self, nr: int = 1000,  nth: Optional[int] = None, debug: bool = True):
+        assert isinstance(nr, int) and nr > 0
         self.nr = nr
-        self.nth = nth
         self.radii = (0.5 + np.arange(self.nr)) / self.nr
         self.mu = np.sqrt(1. - self.radii**2)
-
         self.deltar = 1. / self.nr
-        self.deltath = 2. * np.pi / self.nth
+        self.debug = debug
 
-        theta_edges = np.linspace(0., 2. * np.pi, nth+1)
-        self.theta = (theta_edges[1:] + theta_edges[:-1]) / 2.
+        if nth is not None:
+            assert isinstance(nth, int)
+            assert nth > 0
+            self.nth = nth
+            self.deltath = 2. * np.pi / self.nth
+            theta_edges = np.linspace(0., 2. * np.pi, nth+1)
+            self.theta = (theta_edges[1:] + theta_edges[:-1]) / 2.
 
-        self.RR, self.TT = np.meshgrid(self.radii, self.theta, copy=False)
-        self.Z = self.RR * np.sin(self.TT)
-        self.Y = self.RR * np.cos(self.TT)
-        self.Th = np.arccos(self.Z)
-        self.Ph = np.arcsin(self.Y / np.sin(self.Th))
-        self.X = np.sin(self.Th) * np.cos(self.Ph)
-
-        self._mask = np.zeros([self.nth, self.nr])
+            self.RR, self.TT = np.meshgrid(self.radii, self.theta, copy=False)
+            self.Z = self.RR * np.sin(self.TT)
+            self.Y = self.RR * np.cos(self.TT)
+            self.Th = np.arccos(self.Z)
+            self.Ph = np.arcsin(self.Y / np.sin(self.Th))
+            self.X = np.sin(self.Th) * np.cos(self.Ph)
+            self._mask = np.zeros([self.nth, self.nr])
+        else:
+            self._mask = None
+            
 
     def show(self, yp: Number = None, zp: Number = None, rp: Number = None,
              ax: Optional[Axes] = None, projection: str = 'polar', show_axis: bool = False,
@@ -63,6 +65,8 @@ class _BaseStar(object):
         Returns:
             Axes: matplotlib Axe with the created plot
         """
+        if self._mask is None:
+            raise RuntimeError("show needs an accessible _mask attribute")
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection=projection)

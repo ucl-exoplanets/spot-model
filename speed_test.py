@@ -2,19 +2,19 @@ import warnings
 import timeit
 
 from spot_model.tests.original_model import OriginalStarModel
-from spot_model.spotted_star import SpottedStar
+from spot_model.spotted_star import SpottedStar1D, SpottedStar2D
 
 
 warnings.filterwarnings('ignore')
 
 
-def run_speed_test(nr=1000, nth=1000, number=50):
-    smodel = SpottedStar(nr=nr, nth=nth)
+def run_speed_test_2D(nr=1000, nth=1000, number=50):
+    smodel = SpottedStar2D(nr=nr, nth=nth)
     ref_smodel = OriginalStarModel(nr=nr, nth=nth)
 
-    lat = 0
-    lon = 0
-    rspot = 0.2
+    lat = [0]
+    lon = [0]
+    rspot = [0.2]
     mask, _ = smodel._compute_full_spotted_mask(lat, lon, rspot)
 
     # planet radii
@@ -46,6 +46,36 @@ def run_speed_test(nr=1000, nth=1000, number=50):
     print(f"this model (100 radii): {t3:.3f} s")
     return
 
+def run_speed_test_1D(nr=1000, nth=1000, number=50):
+    model2 = SpottedStar2D(nr=nr, nth=nth, lat=0, lon=0, rspot=0.2)
+    model1 = SpottedStar1D(nr=nr, dspot=0, rspot=0.2)
+
+    t0 = timeit.timeit(lambda: model1.compute_rff(),number=number)
+    t1 = timeit.timeit(lambda: model2.compute_rff(), number=number)
+    
+    print('\n\tTime to "compute" the radial filling factor (single central spot):')
+    print(f'model1D: {t0:.5f} s')
+    print(f"model2D: {t1:.5f} s")
+    
+    
+    def f1():
+         model1.remove_spots()
+         model1.add_spot(dspot=0, rspot=0.2)
+         model1.compute_rff()
+
+    def f2():
+         model2.remove_spots()
+         model2.add_spot(lat=0, lon=0, rspot=0.2)
+         model2.compute_rff()
+         
+    t0 = timeit.timeit(f1, number=number)
+    t1 = timeit.timeit(f2, number=number)
+    
+    print('\n\tTime to remove, add spot and compute radial filling factor (single central spot):')
+    print(f'model1D: {t0:.5f} s')
+    print(f"model2D: {t1:.5f} s")
+
 
 if __name__ == '__main__':
-    run_speed_test()
+    run_speed_test_1D()
+    run_speed_test_2D()
