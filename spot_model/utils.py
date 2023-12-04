@@ -1,16 +1,28 @@
+"""Utility functions and type
+
+Types:
+
+    NumOrIt = Optional[Union[Number, Iterable[Number]]]
+
+Functions:
+
+    parse_args_lists(*args, same_length: bool = True) -> Iterable:
+    spher_to_cart(lat: NumOrIt, lon: NumOrIt) -> Tuple[NumOrIt, NumOrIt, NumOrIt]:
+    
+"""
 from numbers import Number
 from typing import Union, Iterable, Optional, Tuple
 
 import numpy as np
 
-NumericOrIterable = Optional[Union[Number, Iterable[Number]]]
+NumOrIt = Optional[Union[Number, Iterable[Number]]]
 
 
 def parse_args_lists(*args, same_length: bool = True) -> Iterable:
     """Parse a list of arguments into a list of lists.
 
     Args:
-        same_length (bool, optional): whether to require argumnts to be of same length. 
+        same_length (bool, optional): whether to require arguments to be of same length. 
             Defaults to True.
 
     Returns:
@@ -27,15 +39,15 @@ def parse_args_lists(*args, same_length: bool = True) -> Iterable:
     return out
 
 
-def spher_to_cart(lat: NumericOrIterable, lon: NumericOrIterable) -> Tuple[NumericOrIterable, NumericOrIterable, NumericOrIterable]:
+def spher_to_cart(lat: NumOrIt, lon: NumOrIt) -> Tuple[NumOrIt, NumOrIt, NumOrIt]:
     """Convert lat/lon to spherical cartesian coordinates.
 
     Args:
-        lat (NumericOrIterable): latitude in degrees 
-        lon (NumericOrIterable): longitude in degrees
+        lat (NumOrIt): latitude in degrees 
+        lon (NumOrIt): longitude in degrees
 
     Returns:
-        Tuple[NumericOrIterable, NumericOrIterable, NumericOrIterable]: cartesian corrdinates x, y, z
+        Tuple[NumOrIt, NumOrIt, NumOrIt]: cartesian coordinates x, y, z
     """
     if not (np.greater_equal(lat, -90).all() and np.less_equal(lat, 90).all()):
         raise ValueError('latitude is defined between -90 and 90°')
