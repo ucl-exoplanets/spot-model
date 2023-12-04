@@ -165,18 +165,15 @@ class SpottedStar2D(SpottedStar):
                 stellar_radii = self.radii
             else:
                 stellar_radii = self.radii[:, None]
-            ff_spot = np.sum(rff_spot * 2. * np.pi *
-                             stellar_radii*self.deltar, axis=0) / np.pi
-            ff_planet = np.sum(rff_planet * 2. * np.pi *
-                               stellar_radii*self.deltar, axis=0) / np.pi
+            ff_spot = np.sum(rff_spot * 2. * stellar_radii*self.deltar, axis=0)
+            ff_planet = np.sum(rff_planet * 2. * stellar_radii*self.deltar, axis=0)
             return ff_spot, ff_planet
         elif yp is not None or zp is not None or rp is not None:
             raise ValueError(
                 "if any of 'yp', 'zp', 'rp' is specified, these three arguments should be specified too")
         else:
             rff_spot = self.compute_rff(yp, zp, rp)
-            ff_spot = np.sum(rff_spot * 2. * np.pi *
-                             self.radii*self.deltar, axis=0) / np.pi
+            ff_spot = np.sum(rff_spot * 2. * self.radii*self.deltar, axis=0)
 
             return ff_spot
 
@@ -273,8 +270,7 @@ class SpottedStar2D(SpottedStar):
         else:
             fraction_planet = np.zeros((len(self.radii), nw))
         fraction_planet[indr_p] = ((mask_p/2).sum(0)*self.deltath)/(2.*np.pi)
-        ff_planet = np.sum(fraction_planet * 2. * np.pi *
-                           stellar_radii*self.deltar, axis=0) / np.pi
+        ff_planet = np.sum(fraction_planet * 2. * stellar_radii*self.deltar, axis=0)
 
         # spot integration
         # Full-size spotted mask with (largest) planet disk removed
@@ -293,8 +289,7 @@ class SpottedStar2D(SpottedStar):
         mask_rmax *= (~(mask_p.astype(bool))).astype(int)
         # integration along theta
         fraction_spot[indr_p] += (mask_rmax.sum(0)*self.deltath)/(2.*np.pi)
-        ff_spot = np.sum(fraction_spot * 2. * np.pi *
-                         stellar_radii * self.deltar, axis=0) / np.pi
+        ff_spot = np.sum(fraction_spot * 2. * stellar_radii * self.deltar, axis=0)
         return fraction_spot, fraction_planet, ff_spot, ff_planet
 
 
@@ -387,8 +382,7 @@ class SpottedStar1D(SpottedStar):
             Number: Effective spot filling factor (between 0 and 1)
         """
         rff = self.compute_rff()
-        ff = np.sum(rff * 2. * np.pi *
-                    self.radii*self.deltar, axis=0) / np.pi
+        ff = np.sum(rff * 2. * self.radii*self.deltar, axis=0)
         if self.debug and not (0. <= ff <= 1.):
             raise RuntimeError('Filling factor cannot excede 1, please review spot parameters')
         return ff
