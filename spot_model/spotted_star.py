@@ -26,17 +26,22 @@ class SpottedStar(_BaseStar):
                  nth: Optional[int] = None,
                  debug: bool = True):
         super().__init__(nr, nth, debug)
-        self.spots = {}
+        self._spots = {}
 
     def __repr__(self):
         return f"{self.get_class_name()}(nr={self.nr}, nth={self.nth}, nspots={self.nspots}, debug={self.debug})"
 
     @property
+    def spots(self):
+        """return the dictionary of spots"""
+        return self._spots
+
+    @property
     def nspots(self) -> int:
         """Return the number of spots."""
-        keys = list(self.spots.keys())
+        keys = list(self._spots.keys())
         if keys:
-            return len(self.spots[keys[0]])
+            return len(self._spots[keys[0]])
         else:
             return 0
 
@@ -76,8 +81,8 @@ class SpottedStar(_BaseStar):
 
     def remove_spots(self):
         """Remove all the spots added to the current star"""
-        for k in self.spots:
-            self.spots[k] = []
+        for k in self._spots:
+            self._spots[k] = []
 
         if self._mask is not None and self._mask.any():
             self._mask = np.zeros([self.nth, self.nr])
@@ -116,7 +121,7 @@ class SpottedStar2D(SpottedStar):
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
         super().__init__(nr, nth, debug)
-        self.spots = {'lat': [],
+        self._spots = {'lat': [],
                       'lon': [],
                       'r': []}
 
@@ -146,9 +151,9 @@ class SpottedStar2D(SpottedStar):
                     raise ValueError('rspot should be between 0 and 1')
                 if np.isclose(rspot, 0).any():
                     warnings.warn('spot radius is close to zero')
-            self.spots['lat'] += lat
-            self.spots['lon'] += lon
-            self.spots['r'] += rspot
+            self._spots['lat'] += lat
+            self._spots['lon'] += lon
+            self._spots['r'] += rspot
             self._update_mask()
 
         elif lat is not None or lon is not None or rspot is not None:
@@ -229,7 +234,7 @@ class SpottedStar2D(SpottedStar):
         TODO: incrementally add to the previously defined mask instead of replacing
         """
         mask, _ = self._compute_full_spotted_mask(
-            self.spots['lat'], self.spots['lon'], self.spots['r'])
+            self._spots['lat'], self._spots['lon'], self._spots['r'])
         self._mask = mask
 
     def _create_mask_feat(self, y, z, rfeat, x=None):
@@ -349,7 +354,7 @@ class SpottedStar1D(SpottedStar):
 
         super().__init__(nr=nr, nth=None, debug=debug)
 
-        self.spots = {'d': [],
+        self._spots = {'d': [],
                       'r': []}
         self.add_spot(dspot, rspot)
 
@@ -374,12 +379,12 @@ class SpottedStar1D(SpottedStar):
                     raise ValueError('rspot should be between 0 and 1')
                 if np.isclose(rspot, 0).any():
                     warnings.warn('spot radius is close to zero')
-            self.spots['d'] += dspot
-            self.spots['r'] += rspot
+            self._spots['d'] += dspot
+            self._spots['r'] += rspot
 
-            if self.debug and len(self.spots['d']) > 1:
+            if self.debug and len(self._spots['d']) > 1:
                 d_s, r_s = map(
-                    list, zip(*sorted(zip(self.spots['d'], self.spots['r']))))
+                    list, zip(*sorted(zip(self._spots['d'], self._spots['r']))))
                 if (np.array(r_s[:-1]) + np.array(r_s[1:]) > np.diff(d_s)).any():
                     warnings.warn("""Possible overlap between spots in terms of distance,
                                   though the 1D model assumes non-overlapping distances""")
@@ -395,7 +400,7 @@ class SpottedStar1D(SpottedStar):
         """
 
         rff = np.zeros(self.nr)
-        for dspot, rspot in zip(self.spots['d'], self.spots['r']):
+        for dspot, rspot in zip(self._spots['d'], self._spots['r']):
             if dspot == 0:
                 rff[self.radii <= rspot] += 1
             else:
