@@ -1,15 +1,21 @@
-"""Implement 1D and 2D models of spotted stars."""
+"""Implement 1D and 2D models of spotted stars.
+
+Classes:
+
+    SpottedStar(_BaseStar)
+    SpottedStar1D(SpottedStar)
+    SpottedStar2D(SpottedStar)
+
+"""
 import warnings
 from numbers import Number
-from typing import Union, Iterable, Optional, Tuple
+from typing import Union, Optional, Tuple
 
 import numpy as np
 from numpy import ndarray
 
-from spot_model.utils import parse_args_lists, spher_to_cart
+from spot_model.utils import parse_args_lists, spher_to_cart, NumOrIt
 from spot_model._base_star import _BaseStar
-
-NumOrIt = Optional[Union[Number, Iterable[Number]]]
 
 
 class SpottedStar(_BaseStar):
@@ -21,6 +27,18 @@ class SpottedStar(_BaseStar):
                  debug: bool = True):
         super().__init__(nr, nth, debug)
         self.spots = {}
+
+    def __repr__(self):
+        return f"{self.get_class_name()}(nr={self.nr}, nth={self.nth}, nspots={self.nspots}, debug={self.debug})"
+
+    @property
+    def nspots(self) -> int:
+        """Return the number of spots."""
+        keys = list(self.spots.keys())
+        if keys:
+            return len(self.spots[keys[0]])
+        else:
+            return 0
 
     @property
     def mask(self) -> ndarray:
@@ -90,11 +108,11 @@ class SpottedStar2D(SpottedStar):
             nr (int, optional): number of quantised values along polar radius. Defaults to 1000.
             nth (int, optional): number of quantised values along theta (polar angle). 
                 (Defaults to 1000)
-            lat (NumericOrIterable, optional): spot(s) latitude(s) in degrees.
+            lat (NumOrIt, optional): spot(s) latitude(s) in degrees.
                 Defaults to None. If defined, must be of same dimension as lon and rspot.
-            lon (NumericOrIterable, optional): spot(s) longitude(s) in degrees. 
+            lon (NumOrIt, optional): spot(s) longitude(s) in degrees. 
                 Defaults to None. If defined, must be of same dimension as lat and rspot.
-            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+            rspot (NumOrIt, optional): spot(s) radius(es) in degrees.
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
         super().__init__(nr, nth, debug)
@@ -108,11 +126,11 @@ class SpottedStar2D(SpottedStar):
         """Add one or several spots to the star object.
 
         Args:
-            lat (NumericOrIterable, optional): spot(s) latitude(s) in degrees.
+            lat (NumOrIt, optional): spot(s) latitude(s) in degrees.
                 Defaults to None. If defined, must be of same dimension as lon and rspot.
-            lon (NumericOrIterable, optional): spot(s) longitude(s) in degrees. 
+            lon (NumOrIt, optional): spot(s) longitude(s) in degrees. 
                 Defaults to None. If defined, must be of same dimension as lat and rspot.
-            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+            rspot (NumOrIt, optional): spot(s) radius(es) in degrees.
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
         if lat is not None and lon is not None and rspot is not None:
@@ -150,7 +168,7 @@ class SpottedStar2D(SpottedStar):
         Args:
             yp (Number, optional): planet y position.  Defaults to None.
             zp (Number, optional): planet z position. Defaults to None.
-            rp (NumericOrIterable, optional): planet radius(es). Defaults to None.
+            rp (NumOrIt, optional): planet radius(es). Defaults to None.
 
         Returns:
             Union[ndarray, Tuple[ndarray, ndarray]]: Either spot radial filling factor (dim=(nr,))
@@ -180,9 +198,9 @@ class SpottedStar2D(SpottedStar):
         Args:
             yp (Number, optional): planet y position.  Defaults to None.
             zp (Number, optional): planet z position. Defaults to None.
-            rp (NumericOrIterable, optional): planet radius(es). Defaults to None.
+            rp (NumOrIt, optional): planet radius(es). Defaults to None.
         Returns:
-            Union[Number, Tuple[NumericOrIterable, NumericOrIterable]]: Either spot filling factor
+            Union[Number, Tuple[NumOrIt, NumOrIt]]: Either spot filling factor
                 or tuple with observed spot and planet filling factors (each of length nw), 
                 where nw is the number of planet radii or wavelengths. 
         """
@@ -244,9 +262,9 @@ class SpottedStar2D(SpottedStar):
             else:
                 indth = np.append(np.where(self.theta <= theta_max)[0],
                                   np.where(self.theta >= theta_min)[0])
-        dd = np.sqrt(((self.X[np.ix_(indth, indr)] - x)**2. if x else 0) +
-                     (self.Y[np.ix_(indth, indr)] - y)**2. +
-                     (self.Z[np.ix_(indth, indr)] - z)**2.)
+        dd = np.sqrt(((self.x[np.ix_(indth, indr)] - x)**2. if x else 0) +
+                     (self.y[np.ix_(indth, indr)] - y)**2. +
+                     (self.z[np.ix_(indth, indr)] - z)**2.)
         dth = 2. * np.arcsin(dd / 2.)
         dth[dth > np.pi / 2.] = 0
         dd *= np.cos(dth / 2.)
@@ -341,9 +359,9 @@ class SpottedStar1D(SpottedStar):
         """Add one or several spots to the 1D star object.
 
         Args:
-            dspot (NumericOrIterable, optional): Distance to the centre
+            dspot (NumOrIt, optional): Distance to the centre
                 Defaults to None. If defined, must be of same dimension as lon and rspot.
-            rspot (NumericOrIterable, optional): spot(s) radius(es) in degrees.
+            rspot (NumOrIt, optional): spot(s) radius(es) in degrees.
                 Defaults to None. If defined, must be of same dimension as lat and lon.
         """
         if dspot is not None and rspot is not None:

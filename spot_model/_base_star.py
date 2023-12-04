@@ -1,6 +1,6 @@
+"""Module for base star class _BaseStar"""
 import warnings
-from numbers import Number
-from typing import Union, Iterable, Optional
+from typing import Optional
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -8,13 +8,13 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap
 
-NumericOrIterable = Optional[Union[Number, Iterable[Number]]]
+from spot_model.utils import NumOrIt
 
 default_colormap = LinearSegmentedColormap.from_list(
     "custom", ["#fff305", "#ffa805"])
 
 
-class _BaseStar(object):
+class _BaseStar:
     """Base class for star model as disk parameterised in polar coordinates."""
     star_value = 0
     spot_value = 1
@@ -36,31 +36,38 @@ class _BaseStar(object):
             theta_edges = np.linspace(0., 2. * np.pi, nth+1)
             self.theta = (theta_edges[1:] + theta_edges[:-1]) / 2.
 
-            self.RR, self.TT = np.meshgrid(self.radii, self.theta, copy=False)
-            self.Z = self.RR * np.sin(self.TT)
-            self.Y = self.RR * np.cos(self.TT)
-            self.Th = np.arccos(self.Z)
-            self.Ph = np.arcsin(self.Y / np.sin(self.Th))
-            self.X = np.sin(self.Th) * np.cos(self.Ph)
+            self.rr, self.tt = np.meshgrid(self.radii, self.theta, copy=False)
+            self.z = self.rr * np.sin(self.tt)
+            self.y = self.rr * np.cos(self.tt)
+            self.th = np.arccos(self.z)
+            self.ph = np.arcsin(self.y / np.sin(self.th))
+            self.x = np.sin(self.th) * np.cos(self.ph)
             self._mask = np.zeros([self.nth, self.nr])
         else:
             self._mask = None
-            
 
-    def show(self, yp: Number = None, zp: Number = None, rp: Number = None,
+    @classmethod
+    def get_class_name(cls):
+        """Return the class name."""
+        return cls.__name__
+
+    def __repr__(self):
+        return f"{self.get_class_name()}(nr={self.nr}, nth={self.nth}, debug={self.debug})"
+
+    def show(self, yp: NumOrIt = None, zp: NumOrIt = None, rp: NumOrIt = None,
              ax: Optional[Axes] = None, projection: str = 'polar', show_axis: bool = False,
              cm: Colormap = default_colormap) -> Axes:
         """Display the star with spot(s) and optional transiting planet.
 
         Args:
             spotted_mask (ndarray): spotted star mask (2D ndarray)
-            yp (Number, optional): planet y position. Defaults to None.
-            zp (Number, optional): planet z position. Defaults to None.
-            rp (NumericOrIterable, optional): planet radius - only one radius supported for now. Defaults to None.
-            ax (Optional[Axes], optional): base matplotlib axe to use. Defaults to None.
-            projection (str): matplotlib axe projection to use should a new axis be defined. Defaults to 'polar' 
-            show_axis (bool, optional): whether to show the star prime meridian and equator. Defaults to False.
-            cm (Colormap, optional): colormap for the star. Defaults to default_colormap.
+            yp (NumOrIt, optional): planet y position(s). (Default: None)
+            zp (NumOrIt, optional): planet z position(s). (Default: None)
+            rp (NumOrIt, optional): planet radius, scalar only. (Default: None)
+            ax (Optional[Axes], optional): base matplotlib axe to use. (Default: None)
+            projection (str): matplotlib axe projection to use for a new axis. (Default: 'polar')
+            show_axis (bool, optional): whether to show the star prime axes. (Default: False)
+            cm (Colormap, optional): colormap for the star. (Default: default_colormap)
 
         Returns:
             Axes: matplotlib Axe with the created plot
@@ -72,7 +79,7 @@ class _BaseStar(object):
             ax = fig.add_subplot(111, projection=projection)
 
         if ax.name == 'polar':
-            ax.pcolormesh(self.TT, self.RR, self._mask,
+            ax.pcolormesh(self.tt, self.rr, self._mask,
                           shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
             ax.vlines([0, np.pi, np.pi/2, -np.pi/2], 0, 1.2,
                       color='black', linestyle='dashed', linewidth=0.5)
@@ -81,12 +88,12 @@ class _BaseStar(object):
                                     facecolor='none', linewidth=0.4, transform=ax.transData._b))
 
         elif ax.name == 'rectilinear':
-            ax.pcolormesh(self.Y, self.Z, self._mask,
+            ax.pcolormesh(self.y, self.z, self._mask,
                           shading='nearest', cmap=cm, antialiased=True, vmin=0, vmax=1)
             ax.hlines(0, -1.2, 1.2, color='black', label='equator',
-                        linestyle='dashed', linewidth=0.5)
+                      linestyle='dashed', linewidth=0.5)
             ax.vlines(0, -1.2, 1.2, color='black', label='meridian',
-                        linestyle='dashed', linewidth=0.5)
+                      linestyle='dashed', linewidth=0.5)
 
             ax.add_patch(plt.Circle((0, 0), 1, edgecolor='black',
                                     facecolor='none', linewidth=0.4))
@@ -109,12 +116,13 @@ class _BaseStar(object):
             else:
                 assert len(yp) == len(zp)
                 list_alpha = np.linspace(0.5, 1, len(yp))
-            for i in range(len(zp)):
+            for i, z in enumerate(zp):
                 if ax.name == 'polar':
-                    ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
-                                            facecolor='black', alpha=list_alpha[i], transform=ax.transData._b))
+                    ax.add_patch(plt.Circle((yp[i], z), rp, edgecolor=None,
+                                            facecolor='black', alpha=list_alpha[i],
+                                            transform=ax.transData._b))
                 elif ax.name == 'rectilinear':
-                    ax.add_patch(plt.Circle((yp[i], zp[i]), rp, edgecolor=None,
+                    ax.add_patch(plt.Circle((yp[i], z), rp, edgecolor=None,
                                             facecolor='black', alpha=list_alpha[i]))
                 else:
                     raise NotImplementedError

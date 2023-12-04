@@ -1,3 +1,9 @@
+"""Original spotted star mdoel from Palermo group wrapped into a class
+
+Classes:
+
+    OriginalStarModel(_BaseStar)
+"""
 import numpy as np
 
 from spot_model._base_star import _BaseStar
@@ -38,9 +44,9 @@ class OriginalStarModel(_BaseStar):
                 indtheta = np.append(np.where(self.theta <= theta_max)[0],
                                      np.where(self.theta >= theta_min)[0])
 
-        dd = np.sqrt((self.X[np.ix_(indtheta, indr)]-x0)**2. +
-                     (self.Y[np.ix_(indtheta, indr)]-y0)**2. +
-                     (self.Z[np.ix_(indtheta, indr)]-z0)**2.)
+        dd = np.sqrt((self.x[np.ix_(indtheta, indr)]-x0)**2. +
+                     (self.y[np.ix_(indtheta, indr)]-y0)**2. +
+                     (self.z[np.ix_(indtheta, indr)]-z0)**2.)
         dth = 2.*np.arcsin(dd/2.)
         dth[dth > np.pi/2.] = 0
         dd *= np.cos(dth/2.)
@@ -70,8 +76,8 @@ class OriginalStarModel(_BaseStar):
                 indtheta = np.append(np.where(self.theta <= theta_max)[0],
                                      np.where(self.theta >= theta_min)[0])
 
-        dd = np.sqrt((self.Y[np.ix_(indtheta, indr)]-y0)**2. +
-                     (self.Z[np.ix_(indtheta, indr)]-z0)**2.)
+        dd = np.sqrt((self.y[np.ix_(indtheta, indr)]-y0)**2. +
+                     (self.z[np.ix_(indtheta, indr)]-z0)**2.)
         dth = 2. * np.arcsin(dd/2.)
         dth[dth > np.pi/2.] = 0
         dd *= np.cos(dth/2.)

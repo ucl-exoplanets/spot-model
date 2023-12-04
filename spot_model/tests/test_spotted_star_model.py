@@ -1,3 +1,11 @@
+"""Unit tests for the package spot_model
+
+Classes:
+
+    TestBaseStar(unittest.TestCase)
+    TestSpottedStar2D(unittest.TestCase)
+    TestSpottedStar1D(unittest.TestCase)
+"""
 import unittest
 import logging
 from numbers import Number
@@ -22,7 +30,7 @@ class TestBaseStar(unittest.TestCase):
             self.assertEqual(star_model.radii.shape, (nr,))
             self.assertEqual(star_model.mu.shape, (nr,))
             self.assertEqual(star_model.theta.shape, (nth,))
-            self.assertEqual(star_model.Z.shape, (nth, nr))
+            self.assertEqual(star_model.z.shape, (nth, nr))
 
     def test_show(self):
         star_model = _BaseStar(nr=10, nth=10)
@@ -44,7 +52,7 @@ class TestSpottedStar2D(unittest.TestCase):
             self.assertTrue(np.isclose(rff, 0).all())
             ff = model.compute_ff()
             self.assertTrue(np.isclose(ff, 0).all())
-        
+
         # removing the spots
         model.add_spot([0, 30], [0, 25], [0.2, 0.1])
         model.remove_spots()
@@ -178,13 +186,13 @@ class TestSpottedStar2D(unittest.TestCase):
                 yp=kwargs['y0p'], zp=kwargs['z0p'], rp=kwargs['rplanet'])
 
             rff_spot_occulted = rff_spot_noplanet - rff_spot.squeeze()
-            
+
             # shapes
             self.assertEqual(rff_spot.shape, (model.nr, ))
             self.assertEqual(rff_planet.shape, (model.nr, ))
             self.assertTrue(isinstance(ff_spot, Number))
             self.assertTrue(isinstance(ff_planet, Number))
-            
+
             # basic physics
             self.assertTrue(np.less_equal(rff_spot_occulted,
                             rff_spot_noplanet+EPS).all())
@@ -195,22 +203,22 @@ class TestSpottedStar2D(unittest.TestCase):
             if k in [0, 4]:
                 self.assertTrue(np.isclose(rff_spot_occulted,
                                 rff_planet.squeeze()).all())
-                # be wary of dimensioality
+                # be wary of dimensionality
                 self.assertTrue((0 < ff_planet < ff_spot).all())
 
             if k in [1, 5]:
                 self.assertTrue(np.isclose(rff_spot_occulted, 0).all())
-                # be wary of dimensioality
+                # be wary of dimensionality
                 self.assertTrue(np.isclose(ff_spot, ff_spot_noplanet).all())
             if k in [3, 7]:
                 self.assertTrue(np.isclose(rff_spot_occulted,
                                 rff_spot_noplanet).all())
-                # be wary of dimensioality
+                # be wary of dimensionality
                 self.assertTrue((ff_spot < ff_spot_noplanet < ff_planet).all())
             if k in [2, 6]:
                 self.assertTrue(np.less_equal(
                     rff_spot_noplanet, (rff_spot+rff_planet).squeeze() + EPS).all())
-                # be wary of dimensioality
+                # be wary of dimensionality
                 self.assertTrue((0 < ff_spot < ff_spot_noplanet).all())
 
     def test_polychrome_planet(self):
@@ -235,7 +243,7 @@ class TestSpottedStar1D(unittest.TestCase):
             self.assertTrue(np.isclose(rff, 0).all())
             ff = model.compute_ff()
             self.assertTrue(np.isclose(ff, 0).all())
-    
+
         # removing the spots
         model.add_spot([0, 0.4], [0.2, 0.1])
         model.remove_spots()
@@ -265,7 +273,7 @@ class TestSpottedStar1D(unittest.TestCase):
                         and np.less_equal(rff2, 1).all())
         self.assertTrue(0 < ff2 < ff < 1)
 
-        # compatibility with 2D model 
+        # compatibility with 2D model
         # (centre spot)
         ref_model = SpottedStar2D(lat=0, lon=0, rspot=0.2)
         self.assertTrue(np.isclose(rff, ref_model.rff).all())
@@ -275,7 +283,7 @@ class TestSpottedStar1D(unittest.TestCase):
         ref_model2 = SpottedStar2D(lat=30, lon=0, rspot=0.2, nth=10000)
         self.assertTrue(np.isclose(rff2, ref_model2.rff).all())
         self.assertTrue(np.isclose(ff2, ref_model2.ff).all())
-        
+
     def test_wrong_spot(self):
         for rspot in [-0.5, 1.5]:
             model = SpottedStar1D()
@@ -300,6 +308,7 @@ class TestSpottedStar1D(unittest.TestCase):
         # ok cause disjoint in radius too
         self.assertTrue(np.isclose(rff, rff1+rff2).all())
         self.assertTrue(np.isclose(ff, ff1+ff2).all())
+
 
 if __name__ == '__main__':
     unittest.main()
