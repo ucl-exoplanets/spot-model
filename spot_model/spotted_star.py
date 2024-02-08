@@ -345,7 +345,7 @@ class SpottedStar2D(SpottedStar):
 
 
 class SpottedStar1D(SpottedStar):
-    """Base class for 1D star model parameterised along radial coordinates."""
+    """Base class for 1D star model parameterised along radial coordinates, approximating spots as ellipses"""
 
     def __init__(self, nr: int = 1000,
                  dspot: NumOrIt = None,
