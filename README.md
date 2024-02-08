@@ -6,11 +6,10 @@ Simple model of a spotted star with transiting planet(s).
 
 This code solely focuses on the geometric distribution of spot(s) and planet(s) on the disk, and thus doesn't include any spectral or limb-darkening information as such.
 
-It models the observed star as a 2D stellar disk by discretising it in polar coordinates, computing the corresponding mask indicating the presence of spot(s) and planet(s), and integrating it along the two polar coordinates.
+It models the observed star as a 2D stellar disk by discretising it in polar coordinates, computing the corresponding mask indicating the presence of spot(s) and planet(s), and integrating it along the two polar coordinates. Behind the hood, this model assumes that stars and planets are spherical and spots are spherical caps of identical contrast.
 
-Alternatively, there is also a 1D spotted star model to compute more efficiently the radial profile of a spotted star, but note that this model can't manage any planet and also seems to slightly diverge from the 2D model (see [#31](https://github.com/ucl-exoplanets/spot-model/issues/31)).
+Alternatively, there is also a 1D spotted star model to compute more efficiently the radial profile of a spotted star, but note that this model approximates spherical caps projections as ellipses and can't accommodate for transit calculations.
 
-This package assumes that stars and planets are spherical and spots are spherical caps of identical contrast.
 
 ## *Basic use*
 
